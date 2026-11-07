@@ -1,0 +1,39 @@
+Zenith Simulator v1.0.2 run, sim_top=sim/tb/vga_tb.sv
+(cosmetic-only warnings: signed/unsigned comparisons between the module's
+`int` counters and localparams, and 32-bit testbench literals compared
+against narrower DUT signals -- none are functional issues; see
+docs/verification_report.md M3 VGA section)
+------------------------------------------------------------
+[PASS] H_TOTAL                        = 800
+[PASS] V_TOTAL                        = 525
+[PASS] H_ACTIVE                       = 640
+[PASS] V_ACTIVE                       = 480
+[PASS] blank_n high at h=0,v=0        = 1
+[PASS] hsync inactive(high) h=0       = 1
+[PASS] blank_n high at h=639          = 1
+[PASS] blank_n low at h=640 (front porch) = 0
+[PASS] hsync still high at h=655      = 1
+[PASS] hsync low at h=656 (sync start) = 0
+[PASS] hsync low at h=751 (sync end)  = 0
+[PASS] hsync high at h=752 (back porch) = 1
+[PASS] fb_valid at v=40,h=0           = 1
+[PASS] fb_addr at v=40,h=0            = 0
+[PASS] fb_addr at v=40,h=1 (2x dup)   = 0
+[PASS] fb_addr at v=40,h=2            = 1
+[PASS] fb_addr at v=40,h=639 (last col) = 319
+[PASS] vga_r passthrough when valid   = 170
+[PASS] vga_g passthrough when valid   = 187
+[PASS] vga_b passthrough when valid   = 204
+[PASS] fb_addr at v=41,h=0 (vert dup of row0) = 0
+[PASS] fb_addr at v=42,h=0 (row1 start) = 320
+[PASS] fb_valid=0 in top border (v=0) = 0
+[PASS] vga_r black in top border      = 0
+[PASS] fb_valid=0 in bottom border (v=440) = 0
+[PASS] vsync high at v=489            = 1
+[PASS] vsync low at v=490 (sync start) = 0
+[PASS] vsync high at v=492 (sync end+1) = 1
+[PASS] sync_n held low (separate-sync mode) = 0
+------------------------------------------------------------
+TOTAL CHECKS=29 ERRORS=0
+VGA_UNIT_TEST_RESULT: PASS
+[sim] $finish at time 16272035 (exit code 0)
