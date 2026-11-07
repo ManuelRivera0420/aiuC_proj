@@ -20,4 +20,16 @@ Known, documented gaps (not blockers for M2): MULH family/DIVU/REMU implemented 
 
 Real compiled C (`firmware/tests/m2_bringup_main.c`), not hand-written assembly, executes correctly on `cpu_core.sv` via Animas: 6/6 checks PASS (stack, `.data`, `.bss`, function call/return via stack). S0/S1 software gates both satisfied. Two bugs found via static `readelf`/`objdump` analysis *before* any simulation (linker script missing `.sdata`/`.sbss`, a constant-folded test). Full writeup: `docs/verification_report.md`. Scope note: M2's linker script uses one flat memory region with no ROM/RAM split — M3/M4 will need a real `.data` load-copy once that split exists.
 
-## M3-M6: not started
+## M3 — Board peripheral PASS: **DONE** (2026-11-07)
+
+All peripherals verified standalone against Animas (not yet wired together into one SoC — that's M4):
+- GPIO (KEY/SW/LED): 10/10 PASS, direct unit test.
+- Address-decoded bus + real ROM/RAM split + .data load-copy: 6/6 PASS, running real compiled C through cpu_core+soc_bus.
+- VGA 640x480@60Hz timing + DOOM scan-out addressing: 29/29 PASS.
+- SDRAM controller (close-page, init+refresh+read/write): 14/14 PASS.
+- SD/SPI SDHC controller (full init handshake + CMD17 block read): 9/9 PASS — the hardest debugging session so far, 4 real RTL bugs + 1 model bug found via Animas waveform inspection.
+- Pin audit: 132 pins, 0 errors, 1 expected warning; 22 pins flagged as needing human-confirmed JP7 reading before `.qsf` generation.
+
+Full writeups: `docs/verification_report.md`, `docs/sdhc_32gb_boot_protocol.md`, `docs/sd_card_preparation.md`, `docs/pin_audit_report.md`, `docs/memory_map.md`. Evidence: `research/evidence_index.md`, `research/results/m3_*.log`.
+
+## M4-M6: not started

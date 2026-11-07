@@ -1,0 +1,133 @@
+signal,bus_index,fpga_pin,io_standard,manual_table,manual_pdf_page,rtl_module,notes
+CLOCK_50,,PIN_Y2,3.3V,Table 4-5,39,top (clock input),50MHz board oscillator
+KEY,0,PIN_M23,Depending on JP7,Table 4-2,36,top (reset),SoC reset -- NOT routed into key_sw_gpio.sv
+KEY,1,PIN_M21,Depending on JP7,Table 4-2,36,key_sw_gpio,Turn left (held)
+KEY,2,PIN_N21,Depending on JP7,Table 4-2,36,key_sw_gpio,Turn right (held)
+KEY,3,PIN_R24,Depending on JP7,Table 4-2,36,key_sw_gpio,Fire / menu confirm
+SW,0,PIN_AB28,Depending on JP7,Table 4-1,36,key_sw_gpio,Move forward (level)
+SW,1,PIN_AC28,Depending on JP7,Table 4-1,36,key_sw_gpio,Move backward (level)
+SW,2,PIN_AC27,Depending on JP7,Table 4-1,36,key_sw_gpio,Strafe left (level)
+SW,3,PIN_AD27,Depending on JP7,Table 4-1,36,key_sw_gpio,Strafe right (level)
+SW,4,PIN_AB27,Depending on JP7,Table 4-1,36,key_sw_gpio,Use/open (edge)
+SW,5,PIN_AC26,Depending on JP7,Table 4-1,36,key_sw_gpio,Next weapon (edge)
+SW,6,PIN_AD26,Depending on JP7,Table 4-1,36,key_sw_gpio,Menu toggle (edge)
+SW,7,PIN_AB26,Depending on JP7,Table 4-1,36,key_sw_gpio,Menu select (edge)
+SW,8,PIN_AC25,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,9,PIN_AB25,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,10,PIN_AC24,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,11,PIN_AB24,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,12,PIN_AB23,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,13,PIN_AA24,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,14,PIN_AA23,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,15,PIN_AA22,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,16,PIN_Y24,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+SW,17,PIN_Y23,Depending on JP7,Table 4-1,36,key_sw_gpio,Reserved
+LEDR,0,PIN_G19,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,1,PIN_F19,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,2,PIN_E19,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,3,PIN_F21,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,4,PIN_F18,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,5,PIN_E18,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,6,PIN_J19,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,7,PIN_H19,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,8,PIN_J17,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,9,PIN_G17,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,10,PIN_J15,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,11,PIN_H16,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,12,PIN_J16,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,13,PIN_H17,2.5V,Table 4-3,36,key_sw_gpio,Status LED
+LEDR,14,PIN_F15,2.5V,Table 4-3,37,key_sw_gpio,Status LED
+LEDR,15,PIN_G15,2.5V,Table 4-3,37,key_sw_gpio,Status LED
+LEDR,16,PIN_G16,2.5V,Table 4-3,37,key_sw_gpio,Status LED
+LEDR,17,PIN_H15,2.5V,Table 4-3,37,key_sw_gpio,Status LED
+VGA_CLK,,PIN_A12,3.3V,Table 4-16,55,vga,Pixel clock to ADV7123
+VGA_HS,,PIN_G13,3.3V,Table 4-16,55,vga,Horizontal sync
+VGA_VS,,PIN_C13,3.3V,Table 4-16,55,vga,Vertical sync
+VGA_BLANK_N,,PIN_F11,3.3V,Table 4-16,55,vga,Blank (active low)
+VGA_SYNC_N,,PIN_C10,3.3V,Table 4-16,55,vga,Composite sync (held low; separate-sync mode)
+VGA_R,0,PIN_E12,3.3V,Table 4-16,55,vga,Red[0]
+VGA_R,1,PIN_E11,3.3V,Table 4-16,55,vga,Red[1]
+VGA_R,2,PIN_D10,3.3V,Table 4-16,55,vga,Red[2]
+VGA_R,3,PIN_F12,3.3V,Table 4-16,55,vga,Red[3]
+VGA_R,4,PIN_G10,3.3V,Table 4-16,55,vga,Red[4]
+VGA_R,5,PIN_J12,3.3V,Table 4-16,55,vga,Red[5]
+VGA_R,6,PIN_H8,3.3V,Table 4-16,55,vga,Red[6]
+VGA_R,7,PIN_H10,3.3V,Table 4-16,55,vga,Red[7]
+VGA_G,0,PIN_G8,3.3V,Table 4-16,55,vga,Green[0]
+VGA_G,1,PIN_G11,3.3V,Table 4-16,55,vga,Green[1]
+VGA_G,2,PIN_F8,3.3V,Table 4-16,55,vga,Green[2]
+VGA_G,3,PIN_H12,3.3V,Table 4-16,55,vga,Green[3]
+VGA_G,4,PIN_C8,3.3V,Table 4-16,55,vga,Green[4]
+VGA_G,5,PIN_B8,3.3V,Table 4-16,55,vga,Green[5]
+VGA_G,6,PIN_F10,3.3V,Table 4-16,55,vga,Green[6]
+VGA_G,7,PIN_C9,3.3V,Table 4-16,55,vga,Green[7]
+VGA_B,0,PIN_B10,3.3V,Table 4-16,55,vga,Blue[0]
+VGA_B,1,PIN_A10,3.3V,Table 4-16,55,vga,Blue[1]
+VGA_B,2,PIN_C11,3.3V,Table 4-16,55,vga,Blue[2]
+VGA_B,3,PIN_B11,3.3V,Table 4-16,55,vga,Blue[3]
+VGA_B,4,PIN_A11,3.3V,Table 4-16,55,vga,Blue[4]
+VGA_B,5,PIN_C12,3.3V,Table 4-16,55,vga,Blue[5]
+VGA_B,6,PIN_D11,3.3V,Table 4-16,55,vga,Blue[6]
+VGA_B,7,PIN_D12,3.3V,Table 4-16,55,vga,Blue[7]
+DRAM_CLK,,PIN_AE5,3.3V,Table 4-28,69,sdram_ctrl,SDRAM clock
+DRAM_CKE,,PIN_AA6,3.3V,Table 4-28,69,sdram_ctrl,Clock enable
+DRAM_RAS_N,,PIN_U6,3.3V,Table 4-28,69,sdram_ctrl,Row address strobe
+DRAM_CAS_N,,PIN_V7,3.3V,Table 4-28,69,sdram_ctrl,Column address strobe
+DRAM_WE_N,,PIN_V6,3.3V,Table 4-28,69,sdram_ctrl,Write enable
+DRAM_CS_N,,PIN_T4,3.3V,Table 4-28,69,sdram_ctrl,Chip select
+DRAM_BA,0,PIN_U7,3.3V,Table 4-28,69,sdram_ctrl,Bank address[0]
+DRAM_BA,1,PIN_R4,3.3V,Table 4-28,69,sdram_ctrl,Bank address[1]
+DRAM_ADDR,0,PIN_R6,3.3V,Table 4-28,69,sdram_ctrl,Address[0]
+DRAM_ADDR,1,PIN_V8,3.3V,Table 4-28,69,sdram_ctrl,Address[1]
+DRAM_ADDR,2,PIN_U8,3.3V,Table 4-28,69,sdram_ctrl,Address[2]
+DRAM_ADDR,3,PIN_P1,3.3V,Table 4-28,69,sdram_ctrl,Address[3]
+DRAM_ADDR,4,PIN_V5,3.3V,Table 4-28,69,sdram_ctrl,Address[4]
+DRAM_ADDR,5,PIN_W8,3.3V,Table 4-28,69,sdram_ctrl,Address[5]
+DRAM_ADDR,6,PIN_W7,3.3V,Table 4-28,69,sdram_ctrl,Address[6]
+DRAM_ADDR,7,PIN_AA7,3.3V,Table 4-28,69,sdram_ctrl,Address[7]
+DRAM_ADDR,8,PIN_Y5,3.3V,Table 4-28,69,sdram_ctrl,Address[8]
+DRAM_ADDR,9,PIN_Y6,3.3V,Table 4-28,69,sdram_ctrl,Address[9]
+DRAM_ADDR,10,PIN_R5,3.3V,Table 4-28,69,sdram_ctrl,Address[10]
+DRAM_ADDR,11,PIN_AA5,3.3V,Table 4-28,69,sdram_ctrl,Address[11]
+DRAM_ADDR,12,PIN_Y7,3.3V,Table 4-28,69,sdram_ctrl,Address[12]
+DRAM_DQM,0,PIN_U2,3.3V,Table 4-28,70,sdram_ctrl,Data mask[0]
+DRAM_DQM,1,PIN_W4,3.3V,Table 4-28,70,sdram_ctrl,Data mask[1]
+DRAM_DQM,2,PIN_K8,3.3V,Table 4-28,70,sdram_ctrl,Data mask[2]
+DRAM_DQM,3,PIN_N8,3.3V,Table 4-28,70,sdram_ctrl,Data mask[3]
+DRAM_DQ,0,PIN_W3,3.3V,Table 4-28,69,sdram_ctrl,Data[0]
+DRAM_DQ,1,PIN_W2,3.3V,Table 4-28,69,sdram_ctrl,Data[1]
+DRAM_DQ,2,PIN_V4,3.3V,Table 4-28,69,sdram_ctrl,Data[2]
+DRAM_DQ,3,PIN_W1,3.3V,Table 4-28,70,sdram_ctrl,Data[3]
+DRAM_DQ,4,PIN_V3,3.3V,Table 4-28,70,sdram_ctrl,Data[4]
+DRAM_DQ,5,PIN_V2,3.3V,Table 4-28,70,sdram_ctrl,Data[5]
+DRAM_DQ,6,PIN_V1,3.3V,Table 4-28,70,sdram_ctrl,Data[6]
+DRAM_DQ,7,PIN_U3,3.3V,Table 4-28,70,sdram_ctrl,Data[7]
+DRAM_DQ,8,PIN_Y3,3.3V,Table 4-28,70,sdram_ctrl,Data[8]
+DRAM_DQ,9,PIN_Y4,3.3V,Table 4-28,70,sdram_ctrl,Data[9]
+DRAM_DQ,10,PIN_AB1,3.3V,Table 4-28,70,sdram_ctrl,Data[10]
+DRAM_DQ,11,PIN_AA3,3.3V,Table 4-28,70,sdram_ctrl,Data[11]
+DRAM_DQ,12,PIN_AB2,3.3V,Table 4-28,70,sdram_ctrl,Data[12]
+DRAM_DQ,13,PIN_AC1,3.3V,Table 4-28,70,sdram_ctrl,Data[13]
+DRAM_DQ,14,PIN_AB3,3.3V,Table 4-28,70,sdram_ctrl,Data[14]
+DRAM_DQ,15,PIN_AC2,3.3V,Table 4-28,70,sdram_ctrl,Data[15]
+DRAM_DQ,16,PIN_M8,3.3V,Table 4-28,70,sdram_ctrl,Data[16]
+DRAM_DQ,17,PIN_L8,3.3V,Table 4-28,70,sdram_ctrl,Data[17]
+DRAM_DQ,18,PIN_P2,3.3V,Table 4-28,70,sdram_ctrl,Data[18]
+DRAM_DQ,19,PIN_N3,3.3V,Table 4-28,70,sdram_ctrl,Data[19]
+DRAM_DQ,20,PIN_N4,3.3V,Table 4-28,70,sdram_ctrl,Data[20]
+DRAM_DQ,21,PIN_M4,3.3V,Table 4-28,70,sdram_ctrl,Data[21]
+DRAM_DQ,22,PIN_M7,3.3V,Table 4-28,70,sdram_ctrl,Data[22]
+DRAM_DQ,23,PIN_L7,3.3V,Table 4-28,70,sdram_ctrl,Data[23]
+DRAM_DQ,24,PIN_U5,3.3V,Table 4-28,70,sdram_ctrl,Data[24]
+DRAM_DQ,25,PIN_R7,3.3V,Table 4-28,70,sdram_ctrl,Data[25]
+DRAM_DQ,26,PIN_R1,3.3V,Table 4-28,70,sdram_ctrl,Data[26]
+DRAM_DQ,27,PIN_R2,3.3V,Table 4-28,70,sdram_ctrl,Data[27]
+DRAM_DQ,28,PIN_R3,3.3V,Table 4-28,70,sdram_ctrl,Data[28]
+DRAM_DQ,29,PIN_T3,3.3V,Table 4-28,70,sdram_ctrl,Data[29]
+DRAM_DQ,30,PIN_U4,3.3V,Table 4-28,70,sdram_ctrl,Data[30]
+DRAM_DQ,31,PIN_U1,3.3V,Table 4-28,70,sdram_ctrl,Data[31]
+SD_CLK,,PIN_AE13,3.3V,Table 4-31,71,sd_spi,SPI clock
+SD_CMD,,PIN_AD14,3.3V,Table 4-31,72,sd_spi,SPI MOSI (DI)
+SD_DAT,0,PIN_AE14,3.3V,Table 4-31,72,sd_spi,SPI MISO (DO)
+SD_DAT,3,PIN_AC14,3.3V,Table 4-31,72,sd_spi,SPI CS_N
+SD_WP_N,,PIN_AF14,3.3V,Table 4-31,72,top (unused),Write-protect sense; not read by sd_spi.sv in this design
