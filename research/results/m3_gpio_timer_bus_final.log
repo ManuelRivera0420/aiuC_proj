@@ -1,0 +1,23 @@
+=== key_sw_gpio_tb.sv (direct unit test) ===
+10/10 PASS, 0 errors. One real testbench bug found+fixed: do_read sampled
+mem_rdata one cycle too late relative to the DUT's clear-on-read side
+effect (both happen combinationally/synchronously at the SAME edge in a
+real single-cycle bus master like cpu_core.sv; the testbench's original
+"wait a full cycle then sample" pattern raced past the value). Fixed by
+sampling mem_rdata via #1 immediately after asserting mem_valid, matching
+cpu_core's own sampling convention.
+
+=== soc_bus_tb.sv (cpu_core + soc_bus SoC-level integration) ===
+Zenith Simulator v1.0.2, sim_top=sim/tb/soc_bus_tb.sv
+------------------------------------------------------------
+CPU status: halted=1 illegal_instr=0 ecall_seen=1 pc=0x00000060
+[PASS] clean ECALL halt
+[PASS] bram[0x00011000] key_status     = 0x0000000a
+[PASS] bram[0x00011004] sw_level       = 0x0002aaaa
+[PASS] bram[0x00011008] timer_live     = 0x00000001
+[PASS] bram[0x0001100c] data_copy      = 0xa5a5a5a5
+[PASS] bram[0x00011010] ram_write      = 0x00c0ffee
+------------------------------------------------------------
+TOTAL CHECKS=6 ERRORS=0
+M3_BUS_TEST_RESULT: PASS
+[sim] $finish at time 2435 (exit code 0)

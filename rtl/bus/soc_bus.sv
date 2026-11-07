@@ -1,0 +1,118 @@
+// Address-decoded bus per docs/memory_map.md. M3 cut: boot ROM, boot RAM,
+// GPIO, and timer are fully wired. SDRAM/SD-SPI/VGA regions are decoded
+// (so addresses reserved for them don't alias into something else) but
+// respond with the same "unmapped" behavior as truly-unassigned space
+// until M4 wires in their controllers -- tracked in PROJECT_STATE.md, not
+// a silent gap.
+module soc_bus (
+    input  logic        clk,
+    input  logic        rst_n,
+
+    // cpu_core-facing port
+    input  logic [31:0] cpu_mem_addr,
+    input  logic [31:0] cpu_mem_wdata,
+    input  logic [3:0]  cpu_mem_wstrb,
+    input  logic        cpu_mem_valid,
+    output logic [31:0] cpu_mem_rdata,
+    output logic        cpu_mem_ready,
+
+    // board-facing GPIO pins
+    input  logic [3:0]  key_n,
+    input  logic [17:0] sw,
+    output logic [17:0] ledr
+);
+    localparam logic [31:0] ROM_BASE   = 32'h0000_0000;
+    localparam logic [31:0] ROM_TOP    = 32'h0000_FFFF;
+    localparam logic [31:0] BRAM_BASE  = 32'h0001_0000;
+    localparam logic [31:0] BRAM_TOP   = 32'h0001_FFFF;
+    localparam logic [31:0] SDRAM_BASE = 32'h1000_0000;
+    localparam logic [31:0] SDRAM_TOP  = 32'h17FF_FFFF;
+    localparam logic [31:0] GPIO_BASE  = 32'h2000_0000;
+    localparam logic [31:0] GPIO_TOP   = 32'h2000_00FF;
+    localparam logic [31:0] TIMER_BASE = 32'h2000_0100;
+    localparam logic [31:0] TIMER_TOP  = 32'h2000_01FF;
+    localparam logic [31:0] SDSPI_BASE = 32'h2000_0200;
+    localparam logic [31:0] SDSPI_TOP  = 32'h2000_02FF;
+    localparam logic [31:0] VGA_BASE   = 32'h3000_0000;
+    localparam logic [31:0] VGA_TOP    = 32'h3003_FFFF;
+
+    typedef enum logic [3:0] {
+        SEL_NONE, SEL_ROM, SEL_BRAM, SEL_GPIO, SEL_TIMER, SEL_UNMAPPED_RESERVED
+    } sel_t;
+    sel_t sel;
+
+    always_comb begin
+        if (cpu_mem_addr >= ROM_BASE && cpu_mem_addr <= ROM_TOP)
+            sel = SEL_ROM;
+        else if (cpu_mem_addr >= BRAM_BASE && cpu_mem_addr <= BRAM_TOP)
+            sel = SEL_BRAM;
+        else if (cpu_mem_addr >= GPIO_BASE && cpu_mem_addr <= GPIO_TOP)
+            sel = SEL_GPIO;
+        else if (cpu_mem_addr >= TIMER_BASE && cpu_mem_addr <= TIMER_TOP)
+            sel = SEL_TIMER;
+        else if ((cpu_mem_addr >= SDRAM_BASE && cpu_mem_addr <= SDRAM_TOP) ||
+                 (cpu_mem_addr >= SDSPI_BASE && cpu_mem_addr <= SDSPI_TOP) ||
+                 (cpu_mem_addr >= VGA_BASE   && cpu_mem_addr <= VGA_TOP))
+            sel = SEL_UNMAPPED_RESERVED; // reserved, not yet wired (M4)
+        else
+            sel = SEL_NONE;
+    end
+
+    // ---- boot ROM / boot RAM: reuse sync_mem.sv, each sees a LOCAL address ----
+    logic [31:0] rom_rdata, bram_rdata;
+    logic        rom_ready, bram_ready;
+
+    sync_mem #(.WORDS(16384), .INIT_FILE("sim/models/soc_rom.hex")) u_rom (
+        .clk(clk), .rst_n(rst_n),
+        .mem_addr(cpu_mem_addr - ROM_BASE),
+        .mem_wdata(cpu_mem_wdata),
+        .mem_wstrb(sel == SEL_ROM ? cpu_mem_wstrb : 4'd0),
+        .mem_valid(sel == SEL_ROM && cpu_mem_valid),
+        .mem_rdata(rom_rdata), .mem_ready(rom_ready)
+    );
+
+    sync_mem #(.WORDS(16384), .INIT_FILE("sim/models/soc_bram_empty.hex")) u_bram (
+        .clk(clk), .rst_n(rst_n),
+        .mem_addr(cpu_mem_addr - BRAM_BASE),
+        .mem_wdata(cpu_mem_wdata),
+        .mem_wstrb(sel == SEL_BRAM ? cpu_mem_wstrb : 4'd0),
+        .mem_valid(sel == SEL_BRAM && cpu_mem_valid),
+        .mem_rdata(bram_rdata), .mem_ready(bram_ready)
+    );
+
+    // ---- GPIO / timer: local 8-bit offset within their 256B windows ----
+    logic [31:0] gpio_rdata, timer_rdata;
+    logic        gpio_ready, timer_ready;
+
+    key_sw_gpio u_gpio (
+        .clk(clk), .rst_n(rst_n),
+        .key_n(key_n), .sw(sw), .ledr(ledr),
+        .mem_addr(cpu_mem_addr[7:0] - GPIO_BASE[7:0]),
+        .mem_wdata(cpu_mem_wdata),
+        .mem_wstrb(sel == SEL_GPIO ? cpu_mem_wstrb : 4'd0),
+        .mem_valid(sel == SEL_GPIO && cpu_mem_valid),
+        .mem_rdata(gpio_rdata), .mem_ready(gpio_ready)
+    );
+
+    timer u_timer (
+        .clk(clk), .rst_n(rst_n),
+        .mem_addr(cpu_mem_addr[7:0] - TIMER_BASE[7:0]),
+        .mem_wdata(cpu_mem_wdata),
+        .mem_wstrb(sel == SEL_TIMER ? cpu_mem_wstrb : 4'd0),
+        .mem_valid(sel == SEL_TIMER && cpu_mem_valid),
+        .mem_rdata(timer_rdata), .mem_ready(timer_ready)
+    );
+
+    // ---- response mux ----
+    always_comb begin
+        case (sel)
+            SEL_ROM:   begin cpu_mem_rdata = rom_rdata;   cpu_mem_ready = rom_ready; end
+            SEL_BRAM:  begin cpu_mem_rdata = bram_rdata;  cpu_mem_ready = bram_ready; end
+            SEL_GPIO:  begin cpu_mem_rdata = gpio_rdata;  cpu_mem_ready = gpio_ready; end
+            SEL_TIMER: begin cpu_mem_rdata = timer_rdata; cpu_mem_ready = timer_ready; end
+            SEL_NONE, SEL_UNMAPPED_RESERVED:
+                       begin cpu_mem_rdata = 32'hDEADBEEF; cpu_mem_ready = cpu_mem_valid; end
+            default:   begin cpu_mem_rdata = 32'hDEADBEEF; cpu_mem_ready = cpu_mem_valid; end
+        endcase
+    end
+endmodule

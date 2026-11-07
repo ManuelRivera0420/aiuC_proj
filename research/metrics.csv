@@ -11,3 +11,6 @@ utc_ts,milestone,metric,value,unit
 2026-11-07T21:52:00Z,M2,firmware_checks_passed,6,count
 2026-11-07T21:52:00Z,M2,sim_finish_time,2015,timescale_units_ns
 2026-11-07T21:52:00Z,M2,static_bugs_found_before_simulation,2,count
+2026-11-07T22:20:00Z,M3,gpio_unit_checks_passed,10,count
+2026-11-07T22:25:00Z,M3,bus_integration_checks_passed,6,count
+2026-11-07T22:25:00Z,M3,rom_image_bytes,184,bytes

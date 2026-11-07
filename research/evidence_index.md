@@ -26,9 +26,17 @@ Every PASS claim below links to a reproducible artifact. "Reproducible" means: r
 | ELF is genuinely RV32IM/ILP32 with no unsupported extensions | `firmware/build/m2_bringup.attrs.txt` (`Tag_RISCV_arch: "rv32i2p1_m2p0_zmmul1p0"`), `firmware/build/m2_bringup.disasm.txt` | `source scripts/riscv_env.sh && riscv64-unknown-elf-readelf -A firmware/build/m2_bringup.elf` |
 | Two real bugs caught by static analysis before any simulation | `research/bugs.csv`, `docs/verification_report.md` M2 section | — |
 
+## M3 (in progress) — GPIO, timer, bus, ROM/RAM split
+
+| Claim | Evidence | How to reproduce |
+|---|---|---|
+| KEY/SW/LED MMIO controller correct: level reads, sticky rising-edge detect with correct clear-on-read semantics, LED write/read-back, unmapped-offset behavior | `research/results/m3_gpio_timer_bus_final.log` (`key_sw_gpio_tb.sv` section): 10/10 PASS | Animas MCP: `set_sim_top(sim/tb/key_sw_gpio_tb.sv)` → `run_simulation` |
+| cpu_core + soc_bus + GPIO + timer + real ROM/RAM split with explicit `.data` load-copy, all exercised by real compiled C | `research/results/m3_gpio_timer_bus_final.log` (`soc_bus_tb.sv` section): 6/6 PASS on the first simulation attempt | `bash scripts/build_firmware.sh m3_bus_gpio firmware/linker/de2_115_bus.ld firmware/startup/crt0_bus.S firmware/tests/m3_bus_gpio_main.c` then Animas `set_sim_top(sim/tb/soc_bus_tb.sv)` → `run_simulation` |
+
 ## What is explicitly NOT claimed yet
 
-- No peripheral RTL exists yet (SDRAM, SD/SPI, VGA, GPIO) — M3 not started.
+- SDRAM controller, SD/SPI controller, VGA timing generator: not yet implemented (M3 in progress).
+- SDRAM/SD-SPI/VGA address ranges are decoded by `soc_bus.sv` (so they don't alias into other regions) but not yet wired to real controllers — reads return a fixed sentinel, not real peripheral behavior. Tracked in `PROJECT_STATE.md`.
 - No SDRAM, SD/SPI, VGA, or GPIO peripheral RTL exists yet.
 - No DoomGeneric source has been fetched or inspected yet.
 - Nothing in this project has been synthesized, fit, timed, or programmed onto physical hardware — and nothing here claims otherwise.
