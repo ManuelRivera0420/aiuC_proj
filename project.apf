@@ -1,0 +1,29 @@
+{
+  "apf_version": "1",
+  "project": {
+    "name": "aiuC_proj",
+    "description": "",
+    "created": "2026-11-07T19:55:29.055445+00:00",
+    "modified": "2026-11-07T20:02:44.450391+00:00",
+    "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
+  },
+  "sources": [],
+  "folders": [],
+  "settings": {
+    "top_module": "counter",
+    "sim_top": "test/counter_tb.sv",
+    "target_device": "",
+    "sim_tool": "zenith",
+    "synth_tool": "yosys",
+    "elab_mode": "manual_top",
+    "active_file_list": "",
+    "auto_rtl_top": "counter",
+    "auto_sim_top": "test/counter_tb.sv",
+    "auto_discover_status": "ok",
+    "auto_discover_candidates": []
+  },
+  "ui_state": {
+    "active_vcd": null,
+    "waveform_tabs": []
+  }
+}
