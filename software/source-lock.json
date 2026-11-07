@@ -1,0 +1,50 @@
+{
+  "doomgeneric": {
+    "upstream_url": "https://github.com/ozkl/doomgeneric.git",
+    "pinned_commit": "e257a09527062bfb986b6e5e0780839b6cbd5b71",
+    "pinned_commit_date": "2026-10-11T16:12:25+03:00",
+    "pinned_commit_subject": "Merge pull request #39 from yughias/compile-mingw",
+    "license": "GPL-2.0 (GNU General Public License v2.0, June 1991) -- see software/upstream/doomgeneric/LICENSE",
+    "vendored_at": "software/upstream/doomgeneric/",
+    "vendored_file_count": 192,
+    "vendored_size_bytes_approx": 2200000,
+    "fetch_method": "git clone https://github.com/ozkl/doomgeneric.git, commit confirmed via git log -1 --format=%H",
+    "notes": "Only the doomgeneric/ subdirectory (the actual portable engine source) is vendored, not the .sln/.git history/screenshots from the clone."
+  },
+  "freedoom": {
+    "release_url": "https://github.com/freedoom/freedoom/releases/download/v0.13.0/freedoom-0.13.0.zip",
+    "version": "0.13.0",
+    "license": "BSD-style (3-clause) -- see software/assets_manifest/freedoom_license/COPYING.txt",
+    "files": {
+      "freedoom1.wad": {
+        "size_bytes": 28795076,
+        "sha256": "7323bcc168c5a45ff10749b339960e98314740a734c30d4b9f3337001f9e703d",
+        "role": "primary IWAD target (Doom-1-style content, matches the mission's preference)"
+      },
+      "freedoom2.wad": {
+        "size_bytes": 28787748,
+        "sha256": "a8772e088847032510d97ba2312406a6998f21cbab44d4ff10696faa9c0ecd4b",
+        "role": "alternate (Doom-II-style), not used unless freedoom1.wad proves incompatible with the pinned DoomGeneric revision"
+      }
+    },
+    "vendored_in_git": false,
+    "vendor_note": "The .wad files themselves are NOT committed to this git repository (28MB each, large binary game-data assets) -- only this manifest, the SHA-256 hashes above, and the license/credits text (software/assets_manifest/freedoom_license/) are tracked. The actual freedoom1.wad used for any build/test must be re-fetched from the release_url above and its hash checked against the value recorded here before use; scripts/prepare_sd_image.py's --wad argument expects this file as a local path, not something it fetches itself."
+  },
+  "toolchain": {
+    "compiler": "riscv64-unknown-elf-gcc 16.1.0 (module riscv-gnu-toolchain/elf-multilib/2026.07.15-elf)",
+    "target_arch": "rv32im",
+    "target_abi": "ilp32",
+    "confirmed_via": "docs/known_limitations.md, PROJECT_STATE.md -- same toolchain used for every firmware build so far (M2-M4)"
+  },
+  "pixel_format_finding": {
+    "summary": "DoomGeneric's TRUE native render resolution is 320x200 8-bit palette-indexed (I_VideoBuffer in doomgeneric/i_video.c), NOT the 640x400 32-bit DG_ScreenBuffer default. Setting #define CMAP256 and DOOMGENERIC_RESX=320/DOOMGENERIC_RESY=200 (matching SCREENWIDTH/SCREENHEIGHT exactly, giving fb_scaling=1) makes I_FinishUpdate's output path a direct memcpy of the indexed buffer into DG_ScreenBuffer -- i.e. DG_ScreenBuffer becomes exactly an 8-bit-indexed 320x200 (64,000-byte) frame, matching the mission's preferred framebuffer format exactly, once this specific combination of defines is used.",
+    "verified_by": "direct source inspection of software/upstream/doomgeneric/{doomgeneric.h,i_video.c} at the pinned commit, not assumed",
+    "source_citations": [
+      "software/upstream/doomgeneric/doomgeneric.h: pixel_t is uint8_t under CMAP256, uint32_t otherwise",
+      "software/upstream/doomgeneric/i_video.c:290: I_VideoBuffer = Z_Malloc(SCREENWIDTH*SCREENHEIGHT,...) -- the real 8-bit indexed draw target",
+      "software/upstream/doomgeneric/i_video.c:282-284: fb_scaling = s_Fb.xres/SCREENWIDTH (and yres/SCREENHEIGHT, whichever is smaller)",
+      "software/upstream/doomgeneric/i_video.c:339-358: the I_FinishUpdate loop -- CMAP256 + fb_scaling==1 takes the plain memcpy branch, skipping cmap_to_fb's RGB conversion entirely"
+    ],
+    "remaining_open_item": "I_SetPalette (i_video.c:388) updates a LOCAL colors[] table used only by cmap_to_fb's RGB-conversion path, which CMAP256 mode bypasses entirely -- meaning the game's dynamic palette changes (damage flash, berserk tint, etc.) need a separate path to reach the hardware's own palette RAM. Needs a small, documented patch to i_video.c's I_SetPalette (forwarding the palette bytes to a new platform hook) -- tracked in software/patches/, not yet written as of this manifest's creation."
+  }
+}
