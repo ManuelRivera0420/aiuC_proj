@@ -10,9 +10,16 @@ Every PASS claim below links to a reproducible artifact. "Reproducible" means: r
 | DE2-115 pin assignments cited in the mission brief (CLOCK_50, KEY[0:3], SW[0:7], VGA/ADV7123, SDRAM, SD Card socket) match the actual manual | Direct text extracted from `DE2_115_User_manual.pdf` via `pypdf`, PDF pages 36, 39, 54-55, 69-70, 71-72 — full extracted text quoted in the conversation transcript and summarized in `docs/board_resource_selection.md` | `python3 -c "from pypdf import PdfReader; r=PdfReader('DE2_115_User_manual.pdf'); print(r.pages[N-1].extract_text())"` for PDF page N |
 | RV32IM/ILP32 bare-metal cross-compilation is available in this environment | `riscv64-unknown-elf-gcc --version` → 16.1.0; `-print-multi-lib` lists `rv32im/ilp32` | `module load riscv-gnu-toolchain/elf-multilib/2026.07.15-elf && riscv64-unknown-elf-gcc -print-multi-lib` |
 
+## M1 — RV32IM multicycle CPU core
+
+| Claim | Evidence | How to reproduce |
+|---|---|---|
+| RV32IM multicycle core (`rtl/cpu/cpu_core.sv` + `decoder.sv` + `mul_div.sv` + M0's `alu.sv`/`regfile.sv`) correctly executes a 66-instruction directed test covering every supported instruction class (ALU reg-reg/reg-imm, LUI, AUIPC, branches incl. signed/unsigned, JAL/JALR round trip, loads/stores incl. byte-lane and sign/zero extension, MUL/DIV/REM) | `research/results/m1_cpu_core_tb_final.log`: 32/32 self-checking assertions PASS, 0 errors, clean ECALL halt at pc=0x104, finish_time=4155 | Animas MCP: `set_sim_top(sim/tb/cpu_core_tb.sv)` → `run_simulation` → `get_last_sim_result` |
+| Test program is real compiled RV32IM, not hand-encoded machine code | `sim/tb/asm/cpu_directed_test.S` assembled with `riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32`, confirmed via `riscv64-unknown-elf-objdump -d` disassembly matching source intent exactly (see `docs/verification_report.md`) | `source scripts/riscv_env.sh && riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -Wl,-Ttext=0x0 -o test.elf sim/tb/asm/cpu_directed_test.S && riscv64-unknown-elf-objdump -d test.elf` |
+| Two real bugs (one RTL timing bug, one test-program bug) were found and fixed via the Animas run→diagnose→patch→rerun loop, not glossed over | `research/bugs.csv`, `docs/verification_report.md` "Bugs found and fixed" section | Diff `git log -p` on commits around this milestone |
+
 ## What is explicitly NOT claimed yet
 
-- No RV32IM CPU core exists yet (M1 not started) — the ALU/regfile above are building blocks, not a processor.
 - No firmware has been compiled or executed on any RTL (S0-S4 software gates not started).
 - No SDRAM, SD/SPI, VGA, or GPIO peripheral RTL exists yet.
 - No DoomGeneric source has been fetched or inspected yet.

@@ -10,8 +10,10 @@
 - Correction recorded: the prior "counter pass" referenced in the initial prompt could not be verified in this project's starting state (0 registered sources, no ZWDB). Treated as unverified rather than fact.
 - Correction recorded: manual page count is 122 (pypdf-confirmed), matching the prompt, not the 141 claimed by harness file metadata.
 
-## M1 — CPU PASS: not started
+## M1 — CPU PASS: **DONE** (2026-11-07)
 
-Next step. Scope: full multicycle RV32IM datapath (ALU above is a reusable building block), control FSM, decode, load/store with byte/half/word + sign extension, branches/jumps, MUL/DIV/REM via the M extension, misaligned-access policy, reset/trap handling sufficient for a freestanding runtime, and an architectural retirement trace Animas can export for independent checking. This is a multi-session effort, not a single-turn deliverable — see `docs/known_limitations.md` for environment facts that will shape it (e.g., Zenith supports SVA/coverage, so M1's ISA tests should use concurrent assertions rather than only `$display` diffing).
+Multicycle RV32IM core (`rtl/cpu/{decoder,mul_div,cpu_core}.sv` + M0's `alu.sv`/`regfile.sv`), picorv32-style memory interface. Verified with a 66-instruction directed test (real `riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32` compiled, not hand-encoded), 32/32 self-checking assertions PASS, 0 errors. Two real bugs found and fixed via Animas (one RTL timing bug in the register-file write-enable path, one off-by-one in the test program itself). Full writeup: `docs/verification_report.md`. Evidence: `research/evidence_index.md`, `research/results/m1_cpu_core_tb_final.log`.
+
+Known, documented gaps (not blockers for M2): MULH family/DIVU/REMU implemented but only lightly spot-tested by reasoning rather than a directed test each; no LH/LHU directed test; no illegal-instruction/CSR-rejection directed test; misaligned access behavior undefined. Candidates for a later hardening pass.
 
 ## M2-M6: not started

@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-07T20:17:53.464982+00:00",
+    "modified": "2026-11-07T20:44:15.883284+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -22,12 +22,42 @@
       "path": "sim/tb/alu_regfile_tb.sv",
       "role": "simulation",
       "library": "work"
+    },
+    {
+      "path": "rtl/cpu/decoder.sv",
+      "role": "rtl",
+      "library": "work"
+    },
+    {
+      "path": "rtl/cpu/mul_div.sv",
+      "role": "rtl",
+      "library": "work"
+    },
+    {
+      "path": "rtl/cpu/cpu_core.sv",
+      "role": "rtl",
+      "library": "work"
+    },
+    {
+      "path": "sim/models/sync_mem.sv",
+      "role": "simulation",
+      "library": "work"
+    },
+    {
+      "path": "sim/tb/cpu_core_tb.sv",
+      "role": "simulation",
+      "library": "work"
+    },
+    {
+      "path": "sim/models/program.hex",
+      "role": "mem",
+      "library": "work"
     }
   ],
   "folders": [],
   "settings": {
     "top_module": "counter",
-    "sim_top": "sim/tb/alu_regfile_tb.sv",
+    "sim_top": "sim/tb/cpu_core_tb.sv",
     "target_device": "",
     "sim_tool": "zenith",
     "synth_tool": "yosys",
