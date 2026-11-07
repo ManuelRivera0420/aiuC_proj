@@ -1,0 +1,11 @@
+10000000 T _start
+10000018 t clear_bss_loop
+10000028 t clear_bss_done
+10000034 t halt_spin
+10000038 T main
+100000a8 T __bss_end
+100000a8 T __bss_start
+100000a8 T __data_end
+100000a8 T __data_start
+100000b0 T __heap_start
+10100000 T _stack_top

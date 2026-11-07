@@ -1,0 +1,16 @@
+{
+  "magic": "RVDM",
+  "version": 1,
+  "program_load_addr": "0x10000000",
+  "program_entry_addr": "0x10000000",
+  "program_length_bytes": 168,
+  "program_lba_start": 1,
+  "program_lba_count": 1,
+  "program_sha256": "6e5756af5d8c915252230d62702f5e205c089191b4a10d842537ee015e046bbb",
+  "wad_lba_start": 0,
+  "wad_length_bytes": 0,
+  "wad_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "total_sectors": 2,
+  "total_bytes": 1024,
+  "image_sha256": "96c400466acf68c4ae29d4d1c36abca3680eb6595eeebabb5e46141e60ff9f21"
+}

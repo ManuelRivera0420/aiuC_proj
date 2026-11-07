@@ -1,0 +1,15 @@
+00000000 T _start
+00000020 t copy_data_loop
+00000038 t copy_data_done
+00000048 t clear_bss_loop
+00000058 t clear_bss_done
+00000064 t halt_spin
+00000068 t sdspi_read_block
+000000d4 T main
+00000248 A __data_load_start
+00010000 T __bss_end
+00010000 T __bss_start
+00010000 T __data_end
+00010000 T __data_start
+00010000 T __heap_start
+00020000 T _stack_top

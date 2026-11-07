@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-07T21:21:17.639273+00:00",
+    "modified": "2026-11-07T22:05:11.304295+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -142,12 +142,22 @@
       "path": "sim/tb/sd_spi_tb.sv",
       "role": "simulation",
       "library": "work"
+    },
+    {
+      "path": "rtl/peripherals/framebuffer.sv",
+      "role": "rtl",
+      "library": "work"
+    },
+    {
+      "path": "sim/tb/m4_e2e_tb.sv",
+      "role": "simulation",
+      "library": "work"
     }
   ],
   "folders": [],
   "settings": {
     "top_module": "counter",
-    "sim_top": "sim/tb/sd_spi_tb.sv",
+    "sim_top": "sim/tb/m4_e2e_tb.sv",
     "target_device": "",
     "sim_tool": "zenith",
     "synth_tool": "yosys",

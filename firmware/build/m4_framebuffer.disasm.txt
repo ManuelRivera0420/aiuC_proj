@@ -1,0 +1,57 @@
+
+/home/marivera/Documents/aiuC_proj/firmware/build/m4_framebuffer.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+10000000 <_start>:
+10000000:	00100117          	auipc	sp,0x100
+10000004:	00010113          	mv	sp,sp
+10000008:	00000297          	auipc	t0,0x0
+1000000c:	0a028293          	addi	t0,t0,160 # 100000a8 <__bss_end>
+10000010:	00000317          	auipc	t1,0x0
+10000014:	09830313          	addi	t1,t1,152 # 100000a8 <__bss_end>
+
+10000018 <clear_bss_loop>:
+10000018:	0062d863          	bge	t0,t1,10000028 <clear_bss_done>
+1000001c:	0002a023          	sw	zero,0(t0)
+10000020:	00428293          	addi	t0,t0,4
+10000024:	ff5ff06f          	j	10000018 <clear_bss_loop>
+
+10000028 <clear_bss_done>:
+10000028:	00000097          	auipc	ra,0x0
+1000002c:	010080e7          	jalr	16(ra) # 10000038 <main>
+10000030:	00000073          	ecall
+
+10000034 <halt_spin>:
+10000034:	0000006f          	j	10000034 <halt_spin>
+
+10000038 <main>:
+10000038:	00ff07b7          	lui	a5,0xff0
+1000003c:	30000737          	lui	a4,0x30000
+10000040:	00f72023          	sw	a5,0(a4) # 30000000 <_stack_top+0x1ff00000>
+10000044:	3001f737          	lui	a4,0x3001f
+10000048:	66f72e23          	sw	a5,1660(a4) # 3001f67c <_stack_top+0x1ff1f67c>
+1000004c:	3003e737          	lui	a4,0x3003e
+10000050:	7ef72e23          	sw	a5,2044(a4) # 3003e7fc <_stack_top+0x1ff3e7fc>
+10000054:	30010737          	lui	a4,0x30010
+10000058:	acf72423          	sw	a5,-1336(a4) # 3000fac8 <_stack_top+0x1ff0fac8>
+1000005c:	200007b7          	lui	a5,0x20000
+10000060:	1007a603          	lw	a2,256(a5) # 20000100 <_stack_top+0xff00100>
+10000064:	10078713          	addi	a4,a5,256
+10000068:	0c700693          	li	a3,199
+1000006c:	00072783          	lw	a5,0(a4)
+10000070:	40c787b3          	sub	a5,a5,a2
+10000074:	fef6fce3          	bgeu	a3,a5,1000006c <main+0x34>
+10000078:	000107b7          	lui	a5,0x10
+1000007c:	f0078793          	addi	a5,a5,-256 # ff00 <_start-0xfff0100>
+10000080:	30000737          	lui	a4,0x30000
+10000084:	00f72023          	sw	a5,0(a4) # 30000000 <_stack_top+0x1ff00000>
+10000088:	3001f737          	lui	a4,0x3001f
+1000008c:	66f72e23          	sw	a5,1660(a4) # 3001f67c <_stack_top+0x1ff1f67c>
+10000090:	3003e737          	lui	a4,0x3003e
+10000094:	7ef72e23          	sw	a5,2044(a4) # 3003e7fc <_stack_top+0x1ff3e7fc>
+10000098:	30010737          	lui	a4,0x30010
+1000009c:	acf72423          	sw	a5,-1336(a4) # 3000fac8 <_stack_top+0x1ff0fac8>
+100000a0:	00000513          	li	a0,0
+100000a4:	00008067          	ret

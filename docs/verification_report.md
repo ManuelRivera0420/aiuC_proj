@@ -75,6 +75,19 @@ Both of these were caught by reading `readelf -S` / `objdump -d` output on the *
 
 The debugging method that actually worked: rather than re-deriving timing by hand (which produced a wrong theory at least once), pull the actual waveform with `query_signals_window`/`find_signal_transitions` on the raw SPI lines plus the relevant internal registers, and read off exactly what was sent vs. received bit-by-bit.
 
+## M4 — SoC integration: **BLOCKED on Animas daemon, not yet verified**
+
+All M4 code is written and builds cleanly (bootloader firmware, SDRAM-resident test program, real SD boot image via `prepare_sd_image.py`/`verify_sd_image.py` — both independently PASS on the image itself — and `sim/tb/m4_e2e_tb.sv`), but **no simulation of it has actually completed**. Repeated `run_simulation` calls (8+ attempts across real elapsed time, interspersed with other work to let any transient state clear) all returned the identical error `ERROR: ZenithDaemonClient: job already in progress`, with `ui_remote_control` mode consistently reporting ~65s elapsed before failing — the daemon has a stuck job lock that none of the available MCP tools can clear (no cancel/restart tool exists). This is reported as a genuine blocker per the mission's integrity requirement, not glossed over: **do not read anything below this notice as if `m4_e2e_tb.sv` has passed** — it has not been run to completion.
+
+While writing this code (before the daemon got stuck), one real design issue was caught by review rather than simulation: `sd_spi.sv`'s `ST_READ_DATA` packed received sector bytes MSB-first into `block_buf` (byte 0 → bits `[31:24]`), which was internally self-consistent and had already passed `sd_spi_tb.sv`'s own checks (which asserted exactly that packing), but is backwards relative to standard little-endian RV32 memory layout — a `sw` of such a word into SDRAM would byte-reverse every 4 bytes of any program or WAD copied from the card. Fixed to byte-0-into-bits-`[7:0]`, with `sd_spi_tb.sv`'s expected values updated to match (`0x18110A03`/`0x342D261F` instead of the old `0x030A1118`/`0x1F262D34`) — **but this updated test has also not been re-run** for the same daemon-lock reason, so even M3's previously-PASSING SD/SPI result should be treated as "code changed since last verified PASS" until the daemon recovers and it's rerun.
+
+### What to do when resuming
+
+1. Confirm the Animas desktop app/daemon is in a healthy state (likely needs a human to restart the Animas application itself — nothing in this session's available tools can do that).
+2. Re-run `sim/tb/sd_spi_tb.sv` first (confirms the byte-order fix didn't break anything already-verified) — expect 9/9 PASS with the updated word values above.
+3. Run `sim/tb/m4_e2e_tb.sv` — expect it to either PASS outright or need the ordinary debug loop (it has never been elaborated, so there could easily be a compile error or further logic bug neither reasoning nor the build toolchain would have caught).
+4. Update this section with the actual result before telling anyone M4 passed.
+
 ### Scope decision for M2 (recorded, not discovered later)
 
 This milestone's linker script places `.text`/`.rodata`/`.data`/`.bss` all in one flat 64 KiB RAM region with no ROM/RAM split and no `.data` load-address-vs-virtual-address copy — `crt0.S` only zero-clears `.bss`. This is correct for a single-memory standalone-core test but is **not** the final SoC memory map: M3/M4 introduce a real split (boot ROM or SD-loaded image vs. SDRAM-backed RAM), at which point `.data`'s initial values will need an explicit load-time copy from their LMA to their VMA, not just a `.bss` clear. Tracked in `PROJECT_STATE.md`.

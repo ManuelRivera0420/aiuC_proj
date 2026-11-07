@@ -126,12 +126,12 @@ module sd_spi_tb;
         // Fixture program bytes are (i*7+3)&0xFF for i=0..299 (see the
         // Bash step that generated fixture_program.bin); LBA1 word0 bytes
         // [0,1,2,3] = i=0,1,2,3 -> 3,10,17,24 = 0x03,0x0A,0x11,0x18.
-        // block_buf word0 packs byte0 into bits[31:24] (MSB-first per the
-        // controller's SPI shift order), so word0 = 0x030A1118.
+        // block_buf packs byte N into bits[8N+7:8N] (little-endian, byte0
+        // in bits[7:0]) matching RV32 memory layout, so word0 = 0x18110A03.
         do_read(8'h0C, rd); // REG_BUF_DATA word 0 (auto-increments)
-        check_eq("block word0 (fixture bytes 0-3)", rd, 32'h030A1118);
+        check_eq("block word0 (fixture bytes 0-3)", rd, 32'h18110A03);
         do_read(8'h0C, rd); // word 1 -> bytes 4,5,6,7 = i=4..7 -> 31,38,45,52
-        check_eq("block word1 (fixture bytes 4-7)", rd, 32'h1F262D34);
+        check_eq("block word1 (fixture bytes 4-7)", rd, 32'h342D261F);
 
         $display("------------------------------------------------------------");
         $display("TOTAL CHECKS=%0d ERRORS=%0d", checks, errors);

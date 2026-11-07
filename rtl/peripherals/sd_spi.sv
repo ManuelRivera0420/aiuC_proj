@@ -444,7 +444,20 @@ module sd_spi #(
                         xfer_start   <= 1'b1;
                     end
                     if (xfer_done) begin
-                        block_buf[block_byte_idx[8:2]][8*(3-block_byte_idx[1:0]) +: 8] <= xfer_rx_byte;
+                        // Little-endian packing: byte N of the 512-byte sector
+                        // (received in wire order, lowest byte offset first)
+                        // goes into bits [8N+7:8N] of its word -- i.e. byte0
+                        // at bits[7:0], matching standard RV32 memory layout.
+                        // This matters beyond internal consistency: the
+                        // bootloader will `sw` these words directly into
+                        // SDRAM, and a normal store's byte lanes assume this
+                        // exact convention -- an earlier version packed
+                        // byte0 into bits[31:24] instead (caught via design
+                        // review before writing the bootloader, not by a
+                        // failing simulation: it would have byte-reversed
+                        // every 4 bytes of every program/WAD copied from SD
+                        // into SDRAM).
+                        block_buf[block_byte_idx[8:2]][8*block_byte_idx[1:0] +: 8] <= xfer_rx_byte;
                         if (block_byte_idx == 16'd511) begin
                             block_byte_idx <= 16'd0;
                             state <= ST_READ_CRC;
