@@ -1,0 +1,23 @@
+Zenith Simulator v1.0.2, sim_top=sim/tb/m4_e2e_tb.sv (re-run after the M5
+framebuffer format revision: 8-bit palette-indexed storage + integrated
+256-entry palette RAM, replacing M4's 32-bit-RGB placeholder)
+------------------------------------------------------------
+CPU status: halted=1 illegal_instr=0 ecall_seen=1 pc=0x10000030
+[PASS] clean ECALL halt (bit1)        = 0x00000001
+[PASS] ecall_seen                     = 0x00000001
+[PASS] pixel(0,0) final index = 2 (green) = 0x00000002
+[PASS] pixel(159,100) final index = 2 (green) = 0x00000002
+[PASS] pixel(319,199) final index = 2 (green) = 0x00000002
+[PASS] pixel(50,50) final index = 2 (green) = 0x00000002
+[PASS] vga scan-out of pixel(0,0) via fb_pixel = 0x0000ff00
+------------------------------------------------------------
+TOTAL CHECKS=7 ERRORS=0
+M4_E2E_TEST_RESULT: PASS
+[sim] $finish at time 9040016 (exit code 0)
+Simulation ended at time 9040016
+
+Note: the final check confirms vga.sv (UNCHANGED since M4/M3 -- 29/29
+standalone, 7/7 here) correctly displays palette[2]=0x00FF00 (green) when
+scanning out pixel index 2, proving the new framebuffer.sv's internal
+index->RGB palette lookup works correctly through the exact same
+downstream VGA path already verified independently.

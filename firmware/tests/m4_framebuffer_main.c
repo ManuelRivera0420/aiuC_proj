@@ -1,41 +1,50 @@
 /*
- * M4 framebuffer animation test: real compiled C, loaded into SDRAM by the
- * bootloader (firmware/bootloader/bootloader_main.c) and executed there,
- * writes two successive "frames" (a small set of pixels, chosen across the
- * full 320x200 range, not just the start) to the on-chip VGA framebuffer
- * through its real memory-mapped address range. Proves the CPU can drive
- * actual pixel output through the full write path -- the testbench
- * separately confirms vga.sv's scan-out reads the final values back
- * correctly (sim/tb/m4_e2e_tb.sv).
+ * M4/M5 framebuffer animation test: real compiled C, loaded into SDRAM by
+ * the bootloader (firmware/bootloader/bootloader_main.c) and executed
+ * there, writes two successive "frames" to the on-chip VGA framebuffer
+ * through its real memory-mapped address range -- updated for the real
+ * DoomGeneric pixel format discovered in M5 (8-bit palette-indexed, see
+ * software/source-lock.json's pixel_format_finding), superseding M4's
+ * initial 32-bit-RGB-per-pixel placeholder.
  *
  * Only a handful of pixels are written (not the full 64,000-pixel frame)
  * to keep simulation time reasonable; this demonstrates the mechanism,
- * not a claim about real achievable fill rate -- see
- * docs/verification_report.md's M4 section for that distinction.
+ * not a claim about real achievable fill rate.
  */
 typedef unsigned int u32;
+typedef unsigned char u8;
 
 #define POKE(addr, val) (*(volatile u32 *)(addr) = (val))
 #define PEEK(addr)      (*(volatile u32 *)(addr))
+#define POKE8(addr, val) (*(volatile u8 *)(addr) = (val))
 
-#define VGA_FB_BASE   0x30000000u
-#define TIMER_CYCLES  0x20000100u
+#define VGA_FB_BASE      0x30000000u
+#define VGA_PALETTE_BASE 0x30010000u /* framebuffer.sv's PALETTE_BASE offset within the same window */
+#define TIMER_CYCLES     0x20000100u
 
 #define DOOM_W 320
 
-static void set_pixel(u32 x, u32 y, u32 rgb) {
+static void set_palette(u8 index, u32 rgb888) {
+    POKE(VGA_PALETTE_BASE + (u32)index * 4u, rgb888);
+}
+
+static void set_pixel(u32 x, u32 y, u8 index) {
     u32 idx = y * DOOM_W + x;
-    POKE(VGA_FB_BASE + idx * 4u, rgb);
+    POKE8(VGA_FB_BASE + idx, index);
 }
 
 int main(void) {
     u32 t0;
 
-    /* frame 1: red at a handful of points spread across the buffer */
-    set_pixel(0, 0, 0xFF0000u);
-    set_pixel(159, 100, 0xFF0000u);
-    set_pixel(319, 199, 0xFF0000u);
-    set_pixel(50, 50, 0xFF0000u);
+    set_palette(1, 0xFF0000u); /* index 1 = red */
+    set_palette(2, 0x00FF00u); /* index 2 = green */
+
+    /* frame 1: palette index 1 (red) at a handful of points spread across
+       the buffer */
+    set_pixel(0, 0, 1);
+    set_pixel(159, 100, 1);
+    set_pixel(319, 199, 1);
+    set_pixel(50, 50, 1);
 
     /* a short busy-wait between frames, using the real timer peripheral */
     t0 = PEEK(TIMER_CYCLES);
@@ -43,12 +52,12 @@ int main(void) {
         /* spin */
     }
 
-    /* frame 2: the same points turn green -- proves the buffer is
-       genuinely re-writable (an "animation"), not a write-once latch */
-    set_pixel(0, 0, 0x00FF00u);
-    set_pixel(159, 100, 0x00FF00u);
-    set_pixel(319, 199, 0x00FF00u);
-    set_pixel(50, 50, 0x00FF00u);
+    /* frame 2: the same points switch to palette index 2 (green) --
+       proves the buffer is genuinely re-writable, not a write-once latch */
+    set_pixel(0, 0, 2);
+    set_pixel(159, 100, 2);
+    set_pixel(319, 199, 2);
+    set_pixel(50, 50, 2);
 
     return 0;
 }

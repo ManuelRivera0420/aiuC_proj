@@ -87,8 +87,14 @@ module m4_e2e_tb;
 
     // Reads back a framebuffer pixel directly from sync_mem's... no: the
     // framebuffer lives in dut_bus.u_framebuffer.mem, a 32-bit word array.
+    // Returns pixel pixel_idx's PALETTE INDEX (8-bit), reading it out of
+    // framebuffer.sv's 4-pixels-per-word packed storage (pixel_words), per
+    // the M5 format revision -- not a full RGB word like M4's original
+    // placeholder expected.
     function automatic logic [31:0] fb_word(int pixel_idx);
-        fb_word = dut_bus.u_framebuffer.mem[pixel_idx];
+        logic [31:0] w;
+        w = dut_bus.u_framebuffer.pixel_words[pixel_idx >> 2];
+        fb_word = {24'd0, w[8 * (pixel_idx[1:0]) +: 8]};
     endfunction
 
     initial begin
@@ -119,11 +125,14 @@ module m4_e2e_tb;
         check_eq("clean ECALL halt (bit1)", {31'd0, ~illegal_instr}, 32'd1);
         check_eq("ecall_seen", {31'd0, ecall_seen}, 32'd1);
 
-        // 320*0+0=0, 100*320+159=32159, 199*320+319=63999, 50*320+50=16050
-        check_eq("pixel(0,0) final = green",      fb_word(0),     32'h0000FF00);
-        check_eq("pixel(159,100) final = green",  fb_word(32159), 32'h0000FF00);
-        check_eq("pixel(319,199) final = green",  fb_word(63999), 32'h0000FF00);
-        check_eq("pixel(50,50) final = green",    fb_word(16050), 32'h0000FF00);
+        // 320*0+0=0, 100*320+159=32159, 199*320+319=63999, 50*320+50=16050.
+        // Pixel storage now holds the 8-bit PALETTE INDEX (2 = green, set
+        // via set_palette(2, 0x00FF00) in firmware/tests/m4_framebuffer_main.c),
+        // not a raw RGB word -- see the M5 framebuffer format revision.
+        check_eq("pixel(0,0) final index = 2 (green)",     fb_word(0),     32'h00000002);
+        check_eq("pixel(159,100) final index = 2 (green)", fb_word(32159), 32'h00000002);
+        check_eq("pixel(319,199) final index = 2 (green)", fb_word(63999), 32'h00000002);
+        check_eq("pixel(50,50) final index = 2 (green)",   fb_word(16050), 32'h00000002);
 
         // confirm the NEW integration point -- framebuffer.sv's scan-out
         // port actually wired to vga.sv's live fb_addr/fb_valid outputs,

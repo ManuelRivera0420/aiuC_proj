@@ -1,15 +1,19 @@
-// On-chip dual-port framebuffer: one 32-bit-per-pixel word per DOOM pixel
-// (320x200 = 64,000 pixels, low 24 bits = {R,G,B}), CPU write/read port on
-// one side, vga.sv's independent scan-out read port on the other -- a
-// standard dual-port BRAM usage pattern.
+// On-chip dual-port framebuffer, REVISED for DoomGeneric's actual native
+// format (see software/source-lock.json's pixel_format_finding, verified
+// by reading software/upstream/doomgeneric/i_video.c at the pinned
+// commit): 320x200 8-bit PALETTE-INDEXED pixels (64,000 bytes), not the
+// 32-bit-RGB placeholder M4 used for initial SoC-integration testing.
 //
-// Pixel format (32-bit word, low 24 bits RGB888) is an M4 interim choice
-// for testing the SoC integration end-to-end, NOT the final locked format
-// -- the mission explicitly warns against assuming DoomGeneric's actual
-// pixel format before inspecting it (M5). Revisit this module's width and
-// soc_bus.sv's VGA_TOP region size once that's known; 256 KiB is already
-// reserved in docs/memory_map.md to cover the worst case (32-bit) without
-// needing to redo the address map later.
+// This module does the index->RGB palette lookup INTERNALLY, so vga.sv
+// (already verified standalone, 29/29 checks, sim/tb/vga_tb.sv) needs NO
+// changes at all -- it still just receives a 24-bit RGB fb_pixel exactly
+// as before.
+//
+// Local address map within this module's 256KiB MMIO window
+// (docs/memory_map.md's VGA_BASE, 0x3000_0000):
+//   0x00000 - 0x0F9FF  pixel data: byte i = pixel i's palette index (0..63999)
+//   0x10000 - 0x103FF  palette: 256 entries x 4 bytes (low 24 bits = RGB888),
+//                      word-addressed, i.e. palette entry N at offset 0x10000+4*N
 module framebuffer #(
     parameter int PIXELS = 64000 // 320*200
 ) (
@@ -29,10 +33,20 @@ module framebuffer #(
     input  logic        fb_valid,
     output logic [23:0] fb_pixel
 );
-    logic [31:0] mem [0:PIXELS-1];
+    localparam logic [17:0] PALETTE_BASE = 18'h10000;
 
-    logic [15:0] waddr;
-    assign waddr = mem_addr[17:2];
+    // ---- pixel storage: byte-indexed, packed 4-per-word for CPU writes ----
+    logic [31:0] pixel_words [0:(PIXELS+3)/4 - 1];
+    // ---- palette: 256 entries, low 24 bits RGB888 ----
+    logic [31:0] palette [0:255];
+
+    logic is_palette_access;
+    assign is_palette_access = (mem_addr >= PALETTE_BASE);
+
+    logic [15:0] pix_waddr;
+    logic [7:0]  pal_waddr;
+    assign pix_waddr = mem_addr[17:2];
+    assign pal_waddr = mem_addr[9:2]; // offset within the palette region, word-indexed
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -40,27 +54,31 @@ module framebuffer #(
             mem_rdata <= 32'd0;
         end else begin
             mem_ready <= mem_valid;
-            if (mem_valid && (|mem_wstrb) && waddr < 16'(PIXELS)) begin
-                if (mem_wstrb[0]) mem[waddr][7:0]   <= mem_wdata[7:0];
-                if (mem_wstrb[1]) mem[waddr][15:8]  <= mem_wdata[15:8];
-                if (mem_wstrb[2]) mem[waddr][23:16] <= mem_wdata[23:16];
-                if (mem_wstrb[3]) mem[waddr][31:24] <= mem_wdata[31:24];
+            if (mem_valid && (|mem_wstrb)) begin
+                if (is_palette_access) begin
+                    if (mem_wstrb[0]) palette[pal_waddr][7:0]   <= mem_wdata[7:0];
+                    if (mem_wstrb[1]) palette[pal_waddr][15:8]  <= mem_wdata[15:8];
+                    if (mem_wstrb[2]) palette[pal_waddr][23:16] <= mem_wdata[23:16];
+                end else if (pix_waddr < 16'((PIXELS + 3) / 4)) begin
+                    if (mem_wstrb[0]) pixel_words[pix_waddr][7:0]   <= mem_wdata[7:0];
+                    if (mem_wstrb[1]) pixel_words[pix_waddr][15:8]  <= mem_wdata[15:8];
+                    if (mem_wstrb[2]) pixel_words[pix_waddr][23:16] <= mem_wdata[23:16];
+                    if (mem_wstrb[3]) pixel_words[pix_waddr][31:24] <= mem_wdata[31:24];
+                end
             end
-            if (waddr < 16'(PIXELS)) mem_rdata <= mem[waddr];
-            else                      mem_rdata <= 32'hDEADBEEF;
+            if (is_palette_access) mem_rdata <= palette[pal_waddr];
+            else                   mem_rdata <= pixel_words[pix_waddr];
         end
     end
 
-    // Independent VGA-side read port: deliberately COMBINATIONAL (no clock
-    // at all), matching vga.sv's current assumption of zero-latency
-    // fb_addr->fb_pixel lookup. This also sidesteps a real clock-domain
-    // question -- vga.sv operates on its own divided pixel clock (pclk),
-    // not this module's `clk` -- that a registered read port would have to
-    // address properly. Flagged for M6 synthesis review: real Cyclone IV
-    // M9K blocks this large typically want a registered (1-cycle-latency)
-    // read port; adopting one later means adjusting vga.sv to pipeline its
-    // RGB output by one pclk cycle relative to h_count/v_count, a standard
-    // and small change, not attempted now to keep this M4 integration step
-    // focused.
-    assign fb_pixel = (fb_valid && fb_addr < 17'(PIXELS)) ? mem[fb_addr][23:0] : 24'd0;
+    // ---- VGA-side scan-out: index lookup + palette lookup, both
+    // combinational (matches vga.sv's zero-latency fb_addr->fb_pixel
+    // assumption -- same simplification flagged in M4 for M6 synthesis
+    // review: real M9K blocks this size typically want a registered read,
+    // which would mean pipelining vga.sv's RGB output by one cycle). ----
+    logic [31:0] scan_word;
+    logic [7:0]  scan_index;
+    assign scan_word  = pixel_words[fb_addr[16:2]];
+    assign scan_index = scan_word[8*fb_addr[1:0] +: 8];
+    assign fb_pixel   = (fb_valid && fb_addr < 17'(PIXELS)) ? palette[scan_index][23:0] : 24'd0;
 endmodule

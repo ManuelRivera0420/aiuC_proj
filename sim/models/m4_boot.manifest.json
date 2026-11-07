@@ -3,14 +3,14 @@
   "version": 1,
   "program_load_addr": "0x10000000",
   "program_entry_addr": "0x10000000",
-  "program_length_bytes": 168,
+  "program_length_bytes": 192,
   "program_lba_start": 1,
   "program_lba_count": 1,
-  "program_sha256": "6e5756af5d8c915252230d62702f5e205c089191b4a10d842537ee015e046bbb",
+  "program_sha256": "307340421ec51508e099c72343bf6d50d199c5cfbfa00788dc53b40e268e19e3",
   "wad_lba_start": 0,
   "wad_length_bytes": 0,
   "wad_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "total_sectors": 2,
   "total_bytes": 1024,
-  "image_sha256": "96c400466acf68c4ae29d4d1c36abca3680eb6595eeebabb5e46141e60ff9f21"
+  "image_sha256": "04ebb6538f218838ec963ea6956dab6242da23ef8453d595c2c5fd763c983ecf"
 }
