@@ -1,0 +1,28 @@
+Zenith Simulator v1.0.2, sim_top=sim/tb/m4_e2e_tb.sv
+Real SD boot image (sim/models/m4_boot.img, built by scripts/prepare_sd_image.py
+from the compiled firmware/build/m4_framebuffer.elf) -> sdhc_spi_model.sv ->
+bootloader (firmware/bootloader/bootloader_main.c, real compiled RV32IM C,
+running from boot ROM) -> cpu_core.sv -> soc_bus.sv -> sd_spi.sv (CMD0..CMD58
+init handshake + CMD17 sector reads at the REALISTIC default clock dividers,
+not the sped-up test-only ones used in sd_spi_tb.sv) -> sdram_ctrl.sv/
+sdram_model.sv -> jump to SDRAM entry point -> framebuffer.sv writes (two
+successive "frames") -> vga.sv scan-out.
+------------------------------------------------------------
+CPU status: halted=1 illegal_instr=0 ecall_seen=1 pc=0x10000030
+[PASS] clean ECALL halt (bit1)        = 0x00000001
+[PASS] ecall_seen                     = 0x00000001
+[PASS] pixel(0,0) final = green       = 0x0000ff00
+[PASS] pixel(159,100) final = green   = 0x0000ff00
+[PASS] pixel(319,199) final = green   = 0x0000ff00
+[PASS] pixel(50,50) final = green     = 0x0000ff00
+[PASS] vga scan-out of pixel(0,0) via fb_pixel = 0x0000ff00
+------------------------------------------------------------
+TOTAL CHECKS=7 ERRORS=0
+M4_E2E_TEST_RESULT: PASS
+[sim] $finish at time 9040016 (exit code 0)
+Simulation ended at time 9040016
+
+Note: pc=0x10000030 (inside the SDRAM region, 0x10000000+) at halt confirms
+the bootloader's jump into the loaded program actually happened -- this
+isn't just "the bootloader ran," it's "the bootloader correctly handed off
+execution to code it loaded from the simulated SD card."

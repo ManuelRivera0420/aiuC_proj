@@ -32,4 +32,8 @@ All peripherals verified standalone against Animas (not yet wired together into 
 
 Full writeups: `docs/verification_report.md`, `docs/sdhc_32gb_boot_protocol.md`, `docs/sd_card_preparation.md`, `docs/pin_audit_report.md`, `docs/memory_map.md`. Evidence: `research/evidence_index.md`, `research/results/m3_*.log`.
 
-## M4-M6: not started
+## M4 — SoC integration PASS: **DONE** (2026-11-08)
+
+Full real SD boot image → bootloader → cpu_core → SDRAM → jump → framebuffer writes → VGA scan-out, 7/7 checks PASS (`sim/tb/m4_e2e_tb.sv`). Hit and recovered from a genuine Animas daemon lock between sessions (documented, not glossed over — see `PROJECT_STATE.md`'s prior checkpoint and `docs/verification_report.md`'s M4 section); after the user restarted Animas, re-verified `sd_spi_tb.sv` (9/9, confirming a byte-order fix made while blocked) before running the new end-to-end test. Also addressed a host disk-space concern: moved build scratch off the shared `/tmp` volume to a project-local `.build_tmp/` directory and confirmed (by direct before/after inspection, not assumption) that Zenith/Animas itself doesn't write simulation artifacts to `/tmp` for this project. Full writeup: `docs/verification_report.md`, `docs/known_limitations.md`, `docs/boot_process.md`.
+
+## M5-M6: not started

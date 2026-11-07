@@ -19,3 +19,7 @@ utc_ts,milestone,metric,value,unit
 2026-11-07T23:30:00Z,M3,sd_spi_checks_passed,9,count
 2026-11-07T23:30:00Z,M3,sd_spi_bugs_found,4,count
 2026-11-07T23:30:00Z,M3,sd_spi_debug_iterations,7,count
+2026-11-08T01:40:00Z,M4,sd_spi_recheck_checks_passed,9,count
+2026-11-08T01:40:00Z,M4,e2e_checks_passed,7,count
+2026-11-08T01:40:00Z,M4,e2e_finish_time_ns,9040016,ns
+2026-11-08T01:40:00Z,M4,e2e_halt_pc,0x10000030,address

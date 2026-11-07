@@ -47,11 +47,19 @@ Every PASS claim below links to a reproducible artifact. "Reproducible" means: r
 | Raw boot image format is independently verifiable, not just self-consistent | `python3 scripts/verify_sd_image.py sim/models/sd_fixture.img --manifest sim/models/sd_fixture.manifest.json` → `PASS: image structurally consistent and all hashes verified independently` | same command |
 | Four real RTL bugs (command encoding, SPI mode-0 timing violation, a same-edge race, a read-after-write hazard) found and fixed via Animas waveform inspection, not guesswork | `research/bugs.csv`, `docs/verification_report.md` SD/SPI section | `git log -p` around this milestone's commit |
 
+## M4 — SoC integration
+
+| Claim | Evidence | How to reproduce |
+|---|---|---|
+| Real SD boot image → bootloader (real compiled C) → cpu_core → SDRAM → jump to loaded program → framebuffer writes → VGA scan-out, end to end | `research/results/m4_e2e_tb_final.log`: 7/7 PASS, `pc=0x10000030` at halt (confirms the jump into SDRAM-loaded code) | Animas MCP: `set_sim_top(sim/tb/m4_e2e_tb.sv)` → `run_simulation` (note: this test runs at realistic SD/SPI clock dividers and takes longer than earlier tests — check `get_last_sim_result`'s `finished` field rather than assuming an early tool-call return means it's done) |
+| The SD/SPI byte-order fix (M3→M4) is correct, not just reasoned through | `research/results/m4_sd_spi_tb_recheck.log`: 9/9 PASS with corrected values `0x18110a03`/`0x342d261f` | Animas MCP: `set_sim_top(sim/tb/sd_spi_tb.sv)` → `run_simulation` |
+| Animas/Zenith does not write simulation artifacts to `/tmp` for this project | Before/after snapshot of `/tmp`'s top-level contents+mtimes across a full simulation run showed zero diff; `lsof` on the running daemon/backend processes showed no open `/tmp` files | `find /tmp -maxdepth 1 -printf '%T@ %p\n' \| sort -n` before and after a `run_simulation` call, diff the two |
+
 ## What is explicitly NOT claimed yet
 
-- VGA/SDRAM/SD-SPI controllers are not yet wired into `soc_bus.sv` — each is verified standalone against its own testbench/model, but the full SoC integration (M4) hasn't connected them to `cpu_core` through the bus yet. Their address ranges ARE already reserved in the decoder so nothing aliases.
-- No bootloader exists yet that actually drives `sd_spi.sv` to load a program into SDRAM — that's M4.
 - No physical SD card write has been performed by this project — `docs/sd_card_preparation.md` is instructions for the human team, not a completed action.
+- No real DoomGeneric/Freedoom source has been fetched or ported yet — that's M5.
+- No Quartus project files (`.qpf`/`.qsf`/`.sdc`) or `rtl/board/de2_115_top.sv` exist yet — that's M6.
 - No SDRAM, SD/SPI, VGA, or GPIO peripheral RTL exists yet.
 - No DoomGeneric source has been fetched or inspected yet.
 - Nothing in this project has been synthesized, fit, timed, or programmed onto physical hardware — and nothing here claims otherwise.

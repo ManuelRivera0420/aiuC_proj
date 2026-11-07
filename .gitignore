@@ -2,3 +2,4 @@ output/
 firmware/build/*.o
 firmware/build/*.elf
 firmware/build/*.bin
+.build_tmp/
