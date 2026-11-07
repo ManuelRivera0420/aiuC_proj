@@ -1,0 +1,17 @@
+Zenith Simulator v1.0.2 run, sim_top=sim/tb/firmware_m2_tb.sv
+Firmware: firmware/tests/m2_bringup_main.c + firmware/startup/crt0.S,
+linked with firmware/linker/de2_115.ld, compiled via scripts/build_firmware.sh
+(riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32 -ffreestanding -mno-relax -O1)
+------------------------------------------------------------
+CPU status: halted=1 illegal_instr=0 ecall_seen=1 pc=0x00000030
+[PASS] clean ECALL halt (main() returned, crt0 executed ecall)
+[PASS] mem[0x2000] g_initialized    = 0x1234abcd
+[PASS] mem[0x2004] g_zero(cleared)  = 0x00000000
+[PASS] mem[0x2008] stack_sum        = 0x0000000e
+[PASS] mem[0x200c] call_return      = 0x0000014d
+[PASS] mem[0x2010] bss_writable     = 0xcafebabe
+------------------------------------------------------------
+TOTAL CHECKS=6 ERRORS=0
+M2_FIRMWARE_TEST_RESULT: PASS
+[sim] $finish at time 2015 (exit code 0)
+Simulation ended at time 2015

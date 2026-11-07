@@ -1,0 +1,49 @@
+
+/home/marivera/Documents/aiuC_proj/firmware/build/m2_bringup.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <_start>:
+   0:	00010117          	auipc	sp,0x10
+   4:	00010113          	mv	sp,sp
+   8:	00000297          	auipc	t0,0x0
+   c:	08428293          	addi	t0,t0,132 # 8c <g_zero>
+  10:	00000317          	auipc	t1,0x0
+  14:	08030313          	addi	t1,t1,128 # 90 <__bss_end>
+
+00000018 <clear_bss_loop>:
+  18:	0062d863          	bge	t0,t1,28 <clear_bss_done>
+  1c:	0002a023          	sw	zero,0(t0)
+  20:	00428293          	addi	t0,t0,4
+  24:	ff5ff06f          	j	18 <clear_bss_loop>
+
+00000028 <clear_bss_done>:
+  28:	00000097          	auipc	ra,0x0
+  2c:	010080e7          	jalr	16(ra) # 38 <main>
+  30:	00000073          	ecall
+
+00000034 <halt_spin>:
+  34:	0000006f          	j	34 <halt_spin>
+
+00000038 <main>:
+  38:	000007b7          	lui	a5,0x0
+  3c:	0887a703          	lw	a4,136(a5) # 88 <g_initialized>
+  40:	000027b7          	lui	a5,0x2
+  44:	00e7a023          	sw	a4,0(a5) # 2000 <__bss_end+0x1f70>
+  48:	000007b7          	lui	a5,0x0
+  4c:	08c7a683          	lw	a3,140(a5) # 8c <g_zero>
+  50:	00002737          	lui	a4,0x2
+  54:	00d72223          	sw	a3,4(a4) # 2004 <__bss_end+0x1f74>
+  58:	00e00693          	li	a3,14
+  5c:	00d72423          	sw	a3,8(a4)
+  60:	14d00693          	li	a3,333
+  64:	00d72623          	sw	a3,12(a4)
+  68:	cafec737          	lui	a4,0xcafec
+  6c:	abe70713          	addi	a4,a4,-1346 # cafebabe <_stack_top+0xcafdbabe>
+  70:	08e7a623          	sw	a4,140(a5)
+  74:	08c7a703          	lw	a4,140(a5)
+  78:	000027b7          	lui	a5,0x2
+  7c:	00e7a823          	sw	a4,16(a5) # 2010 <__bss_end+0x1f80>
+  80:	00000513          	li	a0,0
+  84:	00008067          	ret

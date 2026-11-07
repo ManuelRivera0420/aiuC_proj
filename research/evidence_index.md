@@ -18,9 +18,17 @@ Every PASS claim below links to a reproducible artifact. "Reproducible" means: r
 | Test program is real compiled RV32IM, not hand-encoded machine code | `sim/tb/asm/cpu_directed_test.S` assembled with `riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32`, confirmed via `riscv64-unknown-elf-objdump -d` disassembly matching source intent exactly (see `docs/verification_report.md`) | `source scripts/riscv_env.sh && riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32 -nostdlib -nostartfiles -Wl,-Ttext=0x0 -o test.elf sim/tb/asm/cpu_directed_test.S && riscv64-unknown-elf-objdump -d test.elf` |
 | Two real bugs (one RTL timing bug, one test-program bug) were found and fixed via the Animas run→diagnose→patch→rerun loop, not glossed over | `research/bugs.csv`, `docs/verification_report.md` "Bugs found and fixed" section | Diff `git log -p` on commits around this milestone |
 
+## M2 — Bare-metal firmware boot (S0/S1 software gates)
+
+| Claim | Evidence | How to reproduce |
+|---|---|---|
+| Real compiled C executes correctly on `cpu_core.sv`, with correct stack/`.data`/`.bss`/function-call handling | `research/results/m2_firmware_tb_final.log`: 6/6 checks PASS, 0 errors, clean ECALL halt | `bash scripts/build_firmware.sh m2_bringup firmware/linker/de2_115.ld firmware/startup/crt0.S firmware/tests/m2_bringup_main.c` then Animas MCP `set_sim_top(sim/tb/firmware_m2_tb.sv)` → `run_simulation` |
+| ELF is genuinely RV32IM/ILP32 with no unsupported extensions | `firmware/build/m2_bringup.attrs.txt` (`Tag_RISCV_arch: "rv32i2p1_m2p0_zmmul1p0"`), `firmware/build/m2_bringup.disasm.txt` | `source scripts/riscv_env.sh && riscv64-unknown-elf-readelf -A firmware/build/m2_bringup.elf` |
+| Two real bugs caught by static analysis before any simulation | `research/bugs.csv`, `docs/verification_report.md` M2 section | — |
+
 ## What is explicitly NOT claimed yet
 
-- No firmware has been compiled or executed on any RTL (S0-S4 software gates not started).
+- No peripheral RTL exists yet (SDRAM, SD/SPI, VGA, GPIO) — M3 not started.
 - No SDRAM, SD/SPI, VGA, or GPIO peripheral RTL exists yet.
 - No DoomGeneric source has been fetched or inspected yet.
 - Nothing in this project has been synthesized, fit, timed, or programmed onto physical hardware — and nothing here claims otherwise.

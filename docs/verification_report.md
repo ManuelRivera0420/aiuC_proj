@@ -34,3 +34,21 @@ Every instruction class the decoder implements is exercised and independently ch
 - Misaligned load/store behavior is unspecified/untested (the mission allows documenting a simplification here rather than inventing a policy; current RTL simply uses whatever address bits are given, which for a misaligned word access would silently give wrong byte-lane results rather than trapping — flagged as a follow-up, not a blocker for M2).
 
 These gaps are candidates for the upstream `riscv-tests` regression mentioned above, or additional directed cases, in a later hardening pass -- not required to proceed to M2 (bare-metal firmware boot), which exercises the CPU against real compiled C rather than hand-written assembly and will surface any of these gaps that matter in practice.
+
+## M2 — Bare-metal firmware boot (mission's S0/S1 software gates)
+
+**Status: PASS** (2026-11-07). Evidence: `research/results/m2_firmware_tb_final.log`, `research/evidence_index.md`.
+
+- **S0** (cross-compiler produces an inspected RV32IM/ILP32 ELF): confirmed via `readelf -A firmware/build/m2_bringup.elf` → `Tag_RISCV_arch: "rv32i2p1_m2p0_zmmul1p0"`, and an `objdump -d` grep for F/D/A/V/compressed/CSR/AMO mnemonics found none.
+- **S1** (`_start` + tiny C firmware executes on the Animas RTL processor with correct stack, `.data`, `.bss`, MMIO): `firmware/tests/m2_bringup_main.c` + `firmware/startup/crt0.S`, linked with `firmware/linker/de2_115.ld`, run on `cpu_core.sv` in Animas. 6/6 checks PASS: a nonzero initialized global loads correctly from `.data`, an uninitialized global reads back exactly zero after `crt0`'s explicit `.bss`-clear loop, a stack-resident array+loop computes the right sum, a real function call/return round-trips correctly through the stack, and `.bss` is confirmed ordinary writable RAM after startup.
+
+### Bugs found via static analysis, before spending any simulation cycles
+
+Both of these were caught by reading `readelf -S` / `objdump -d` output on the *first* compiled build, before registering anything with Animas — exactly the "static ISA/ABI gate" the mission calls for:
+
+1. **Linker script gap**: `firmware/linker/de2_115.ld` originally matched only `.data`/`.bss`, but the RV32 ABI's default small-data optimization places 4-byte globals in `.sdata`/`.sbss` instead. The uninitialized test global landed in `.sbss`, entirely outside the `__bss_start`/`__bss_end` range `crt0.S` uses to zero `.bss` — meaning the zero-clear loop ran 0 iterations and would have left that word at whatever the simulator's default unknown-memory value is. Fixed by adding `.sdata`/`.sbss`/`.srodata` to the respective output sections — a correctness fix needed for any future C code, not a one-off test workaround.
+2. **Test bug**: the "proves `.data` loads correctly" global was never mutated after its initializer, so `-O1` constant-folded every read of it into an immediate, silently defeating the test (it would have passed even with a broken `.data` loader, since no memory access to it remained in the compiled code). Fixed by marking it `volatile`.
+
+### Scope decision for M2 (recorded, not discovered later)
+
+This milestone's linker script places `.text`/`.rodata`/`.data`/`.bss` all in one flat 64 KiB RAM region with no ROM/RAM split and no `.data` load-address-vs-virtual-address copy — `crt0.S` only zero-clears `.bss`. This is correct for a single-memory standalone-core test but is **not** the final SoC memory map: M3/M4 introduce a real split (boot ROM or SD-loaded image vs. SDRAM-backed RAM), at which point `.data`'s initial values will need an explicit load-time copy from their LMA to their VMA, not just a `.bss` clear. Tracked in `PROJECT_STATE.md`.
