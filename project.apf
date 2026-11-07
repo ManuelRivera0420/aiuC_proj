@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-07T21:07:30.948990+00:00",
+    "modified": "2026-11-07T21:13:44.417764+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -107,12 +107,27 @@
       "path": "sim/tb/vga_tb.sv",
       "role": "simulation",
       "library": "work"
+    },
+    {
+      "path": "rtl/memory/sdram_ctrl.sv",
+      "role": "rtl",
+      "library": "work"
+    },
+    {
+      "path": "sim/models/sdram_model.sv",
+      "role": "simulation",
+      "library": "work"
+    },
+    {
+      "path": "sim/tb/sdram_ctrl_tb.sv",
+      "role": "simulation",
+      "library": "work"
     }
   ],
   "folders": [],
   "settings": {
     "top_module": "counter",
-    "sim_top": "sim/tb/vga_tb.sv",
+    "sim_top": "sim/tb/sdram_ctrl_tb.sv",
     "target_device": "",
     "sim_tool": "zenith",
     "synth_tool": "yosys",

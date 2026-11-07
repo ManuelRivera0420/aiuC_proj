@@ -1,0 +1,23 @@
+Zenith Simulator v1.0.2, sim_top=sim/tb/sdram_ctrl_tb.sv
+(cosmetic-only warnings: signed/unsigned comparisons between wait_ctr and
+int parameters, case statements not exhaustively listing every enum value
+despite having a correct default -- none are functional issues)
+------------------------------------------------------------
+[PASS] precharge count after init     = 0x00000001
+[PASS] refresh count after init (2x)  = 0x00000002
+[PASS] mrs count after init           = 0x00000001
+[PASS] activate count before any access = 0x00000000
+[PASS] no premature read-before-activate true
+[PASS] no premature write-before-activate true
+[PASS] write/read-back word           = 0xdeadbeef
+[PASS] activate count after 2 accesses = 0x00000002
+[PASS] byte-masked write preserves other bytes = 0xdeadbeaa
+[PASS] second address write/read-back = 0xcafef00d
+[PASS] first address unaffected by second write = 0xdeadbeaa
+[PASS] periodic refresh occurred during operation true
+[PASS] still no read-before-activate error true
+[PASS] still no write-before-activate error true
+------------------------------------------------------------
+TOTAL CHECKS=14 ERRORS=0
+SDRAM_CTRL_TEST_RESULT: PASS
+[sim] $finish at time 4570 (exit code 0)
