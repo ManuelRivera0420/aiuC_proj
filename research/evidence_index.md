@@ -33,10 +33,25 @@ Every PASS claim below links to a reproducible artifact. "Reproducible" means: r
 | KEY/SW/LED MMIO controller correct: level reads, sticky rising-edge detect with correct clear-on-read semantics, LED write/read-back, unmapped-offset behavior | `research/results/m3_gpio_timer_bus_final.log` (`key_sw_gpio_tb.sv` section): 10/10 PASS | Animas MCP: `set_sim_top(sim/tb/key_sw_gpio_tb.sv)` → `run_simulation` |
 | cpu_core + soc_bus + GPIO + timer + real ROM/RAM split with explicit `.data` load-copy, all exercised by real compiled C | `research/results/m3_gpio_timer_bus_final.log` (`soc_bus_tb.sv` section): 6/6 PASS on the first simulation attempt | `bash scripts/build_firmware.sh m3_bus_gpio firmware/linker/de2_115_bus.ld firmware/startup/crt0_bus.S firmware/tests/m3_bus_gpio_main.c` then Animas `set_sim_top(sim/tb/soc_bus_tb.sv)` → `run_simulation` |
 
+## M3 — SDRAM controller
+
+| Claim | Evidence | How to reproduce |
+|---|---|---|
+| Close-page SDR SDRAM controller: correct init sequence, word read/write, byte-masked writes, address non-aliasing, periodic refresh during operation | `research/results/m3_sdram_ctrl_tb_final.log`: 14/14 PASS | Animas MCP: `set_sim_top(sim/tb/sdram_ctrl_tb.sv)` → `run_simulation` |
+
+## M3 — SD/SPI controller (mandatory, Section 3A)
+
+| Claim | Evidence | How to reproduce |
+|---|---|---|
+| Full SDHC SPI init handshake (CMD0/CMD8/CMD55+ACMD41 retried exactly twice/CMD58 CCS check) and a CMD17 single-block read verified byte-for-byte against a real prepared boot image | `research/results/m3_sd_spi_tb_final.log`: 9/9 PASS | `python3 scripts/prepare_sd_image.py ...` then Animas `set_sim_top(sim/tb/sd_spi_tb.sv)` → `run_simulation` |
+| Raw boot image format is independently verifiable, not just self-consistent | `python3 scripts/verify_sd_image.py sim/models/sd_fixture.img --manifest sim/models/sd_fixture.manifest.json` → `PASS: image structurally consistent and all hashes verified independently` | same command |
+| Four real RTL bugs (command encoding, SPI mode-0 timing violation, a same-edge race, a read-after-write hazard) found and fixed via Animas waveform inspection, not guesswork | `research/bugs.csv`, `docs/verification_report.md` SD/SPI section | `git log -p` around this milestone's commit |
+
 ## What is explicitly NOT claimed yet
 
-- SDRAM controller, SD/SPI controller, VGA timing generator: not yet implemented (M3 in progress).
-- SDRAM/SD-SPI/VGA address ranges are decoded by `soc_bus.sv` (so they don't alias into other regions) but not yet wired to real controllers — reads return a fixed sentinel, not real peripheral behavior. Tracked in `PROJECT_STATE.md`.
+- VGA/SDRAM/SD-SPI controllers are not yet wired into `soc_bus.sv` — each is verified standalone against its own testbench/model, but the full SoC integration (M4) hasn't connected them to `cpu_core` through the bus yet. Their address ranges ARE already reserved in the decoder so nothing aliases.
+- No bootloader exists yet that actually drives `sd_spi.sv` to load a program into SDRAM — that's M4.
+- No physical SD card write has been performed by this project — `docs/sd_card_preparation.md` is instructions for the human team, not a completed action.
 - No SDRAM, SD/SPI, VGA, or GPIO peripheral RTL exists yet.
 - No DoomGeneric source has been fetched or inspected yet.
 - Nothing in this project has been synthesized, fit, timed, or programmed onto physical hardware — and nothing here claims otherwise.

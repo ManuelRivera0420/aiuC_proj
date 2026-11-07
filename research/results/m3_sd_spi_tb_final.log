@@ -1,0 +1,15 @@
+Zenith Simulator v1.0.2, sim_top=sim/tb/sd_spi_tb.sv (headless run)
+------------------------------------------------------------
+[PASS] no init error                  = 0x00000000
+[PASS] ready after init               = 0x00000001
+[PASS] ACMD41 retried exactly twice before ready = 0x00000002
+[PASS] STATUS: busy=0                 = 0x00000000
+[PASS] STATUS: ready=1                = 0x00000001
+[PASS] STATUS: error=0                = 0x00000000
+[PASS] STATUS after read: error=0     = 0x00000000
+[PASS] block word0 (fixture bytes 0-3) = 0x030a1118
+[PASS] block word1 (fixture bytes 4-7) = 0x1f262d34
+------------------------------------------------------------
+TOTAL CHECKS=9 ERRORS=0
+SD_SPI_TEST_RESULT: PASS
+[sim] $finish at time 298160 (exit code 0)

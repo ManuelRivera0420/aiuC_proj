@@ -16,3 +16,6 @@ utc_ts,milestone,metric,value,unit
 2026-11-07T22:25:00Z,M3,rom_image_bytes,184,bytes
 2026-11-07T23:00:00Z,M3,sdram_checks_passed,14,count
 2026-11-07T23:00:00Z,M3,sdram_first_run_failures,4,count
+2026-11-07T23:30:00Z,M3,sd_spi_checks_passed,9,count
+2026-11-07T23:30:00Z,M3,sd_spi_bugs_found,4,count
+2026-11-07T23:30:00Z,M3,sd_spi_debug_iterations,7,count
