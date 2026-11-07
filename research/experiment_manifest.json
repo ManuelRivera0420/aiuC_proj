@@ -1,0 +1,52 @@
+{
+  "experiment": "autonomous_riscv_doom_de2115",
+  "manifest_version": "0.1.0",
+  "created_utc": "2026-11-07T20:20:00Z",
+  "model": {
+    "name": "claude-sonnet-5",
+    "note": "Model identity/version as reported by the harness system prompt; not independently verifiable by the assistant."
+  },
+  "initial_prompt": {
+    "file": "research/prompts/initial_prompt.md",
+    "sha256_of_saved_file": "ef5f9b102429f03121ec2b1757feae5dce4fd8d4bebfe68b438494b385e5f819",
+    "provenance": "harness-truncated at 50000 characters before delivery to model; see provenance note inside the file",
+    "complete": false
+  },
+  "attached_reference_docs": [
+    {
+      "file": "DE2_115_User_manual.pdf",
+      "sha256": "6353566bf9bc64119551d6c9a1836c02bad2f197415015286d33469a5c388b38",
+      "pdf_pages_per_harness_file_metadata": 141,
+      "pdf_pages_per_prompt_text": 122,
+      "pdf_pages_per_pypdf_direct_count": 122,
+      "discrepancy_note": "harness file-metadata system-reminder claimed 141 pages; the prompt text claims 122. Independent verification via pypdf.PdfReader(...).pages direct count = 122, matching the prompt and contradicting the harness metadata. Treating 122 (independently measured) as authoritative."
+    }
+  ],
+  "animas": {
+    "project_id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1",
+    "project_name": "aiuC_proj",
+    "sandboxed_root_path": "/run/flatpak/doc/e683f3eb/aiuC_proj",
+    "local_root_path": "/home/marivera/Documents/aiuC_proj",
+    "zenith_version": "v1.0.2 (per --help banner)",
+    "pre_existing_counter_demo_verified": false,
+    "pre_existing_counter_demo_note": "project.apf referenced top_module=counter / sim_top=test/counter_tb.sv, but source_count was 0 and latest_zwdb was null at session start -- no counter.sv/counter_tb.sv files existed on disk. The 'previously demonstrated counter pass' claimed in the initial prompt is NOT independently verified by this session; treated as unverified, not as fact."
+  },
+  "environment_probe": {
+    "host": "marivera@<DE2 lab workstation>",
+    "shell_access": true,
+    "internet_access": true,
+    "internet_probe": "HTTP/2 200 from https://github.com",
+    "git": "2.52.0, repo already initialized at /home/marivera/Documents/aiuC_proj with 2 prior commits",
+    "sudo": false,
+    "package_manager_root_install": "unavailable (no passwordless sudo; yum/dnf present but untested without privilege)",
+    "riscv_toolchain": {
+      "found_via": "environment modules (Lmod), module riscv-gnu-toolchain/elf-multilib/2026.07.15-elf",
+      "binary": "/edatools/opensrc/riscv-gnu-toolchain/2026.07.15/elf-multilib/bin/riscv64-unknown-elf-gcc",
+      "gcc_version": "16.1.0",
+      "confirmed_rv32im_ilp32_multilib": true,
+      "multilib_list": ["rv32i/ilp32","rv32im/ilp32","rv32iac/ilp32","rv32imac/ilp32","rv32imafc/ilp32f","rv64imac/lp64","rv64imafdc/lp64d"]
+    },
+    "other_opensrc_tools_present": ["riscv-dv/2026.08.27", "qemu-riscv/8.2.0 (NOT to be used as RTL simulator per prompt scope)"]
+  },
+  "status": "M0 in progress"
+}
