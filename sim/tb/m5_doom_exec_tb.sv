@@ -66,7 +66,25 @@
 //     a failure -- report exactly how far it got (last PC, cycle count,
 //     SDRAM access count) rather than guessing why.
 module m5_doom_exec_tb;
-    localparam longint WATCHDOG_CYCLES = 60_000_000;
+    // Raised from 60,000,000 based on measured workload, not a round-
+    // number guess. The prior run spent its last ~10-15M cycles inside
+    // W_Checksum (software/upstream/doomgeneric/w_checksum.c), whose
+    // total work is bounded and countable: 3,163 real lumps x up to ~21
+    // bytes fed to SHA1_Update each (an 8-char name + 3 int32 fields) =
+    // ~66KB total through SHA1's 64-byte block buffer = ~1,038 Transform()
+    // calls (a FIXED-cost, 80-round function, not data-dependent) across
+    // ~12,652 SHA1_Update invocations total for the whole loop -- i.e.
+    // W_Checksum's own work is small and bounded; the cost here is
+    // entirely this CPU's per-access close-page SDRAM overhead multiplied
+    // across those ~12,652+ calls, each involving several memory
+    // accesses (lump->name read, M_StringCopy's byte loop, SHA1 context/
+    // buffer updates). Did not finish within the prior 60M-cycle budget;
+    // 200,000,000 gives roughly 3.3x that same budget, enough headroom to
+    // plausibly finish W_Checksum (bounded, now known-small intrinsic
+    // work) and reach R_Init/S_Init/ST_Init/D_DoomLoop afterward -- not a
+    // guarantee of reaching DG_DrawFrame, which this run will determine
+    // empirically, not assume.
+    localparam longint WATCHDOG_CYCLES = 200_000_000;
 
     logic clk = 0;
     logic rst_n = 0;
@@ -160,6 +178,19 @@ module m5_doom_exec_tb;
     localparam logic [31:0] ADDR_W_ADDFILE         = 32'h100392d4; // W_AddFile entry (header+directory read happens inside)
     localparam logic [31:0] ADDR_D_IDENTIFYVERSION = 32'h10004118; // D_IdentifyVersion entry (W_AddFile returned OK)
     localparam logic [31:0] ADDR_D_DOOMLOOP        = 32'h10003d24; // D_DoomLoop entry (D_DoomMain's init fully completed)
+    // The four above are KEPT for run-to-run consistency checking (cheap,
+    // already instrumented) even though they're already confirmed passed
+    // -- see docs/verification_report.md's M5 S3 section. Everything
+    // below is NEW, targeting genuinely unconfirmed next steps per
+    // explicit instruction not to add redundant milestones for things
+    // already proven. Addresses again taken directly from `nm` on this
+    // exact build.
+    localparam logic [31:0] ADDR_DG_INIT           = 32'h1003a604; // DG_Init entry -- logically must already have run (doomgeneric.c calls it before D_DoomMain unconditionally), confirming explicitly rather than just by inference
+    localparam logic [31:0] ADDR_D_INITNETGAME     = 32'h10003040; // D_InitNetGame entry -- fires right after InitConnectData (which contains the W_Checksum call) returns, i.e. "W_Checksum completed"
+    localparam logic [31:0] ADDR_W_READLUMP        = 32'h1003987c; // W_ReadLump entry -- the ONE function every actual lump-content read goes through (w_wad.c), regardless of which specific lump triggers it first: "first required WAD lump content access attempted"
+    localparam logic [31:0] ADDR_R_INIT            = 32'h1002c5b4; // R_Init entry -- "game and rendering subsystem initialization" begins (textures/sprites/flats -- real lump content, not just metadata)
+    localparam logic [31:0] ADDR_DG_DRAWFRAME      = 32'h1003a608; // DG_DrawFrame entry -- first actual frame-draw call
+
     // Explicit initializers -- without them these default to X (unknown)
     // at time 0, and `!X && ...` stays X forever, which SystemVerilog's
     // `if` treats as false permanently: a real bug, found by noticing no
@@ -169,6 +200,7 @@ module m5_doom_exec_tb;
     // this project re: DOOM's own code reacting to X -- made the mistake
     // here in the testbench itself instead.
     logic seen_findiwad = 1'b0, seen_addfile = 1'b0, seen_identify = 1'b0, seen_doomloop = 1'b0;
+    logic seen_dginit = 1'b0, seen_initnetgame = 1'b0, seen_readlump = 1'b0, seen_rinit = 1'b0, seen_drawframe = 1'b0;
 
     always @(posedge clk) begin
         if (rst_n) begin
@@ -189,6 +221,26 @@ module m5_doom_exec_tb;
             if (!seen_doomloop && pc_out == ADDR_D_DOOMLOOP) begin
                 seen_doomloop <= 1'b1;
                 $display("[MILESTONE] D_DoomLoop reached -- full engine initialization complete, cycle=%0d", cycle_count);
+            end
+            if (!seen_dginit && pc_out == ADDR_DG_INIT) begin
+                seen_dginit <= 1'b1;
+                $display("[MILESTONE] DG_Init reached (platform hook, no-op on this target), cycle=%0d", cycle_count);
+            end
+            if (!seen_initnetgame && pc_out == ADDR_D_INITNETGAME) begin
+                seen_initnetgame <= 1'b1;
+                $display("[MILESTONE] D_InitNetGame reached -- W_Checksum completed (all 3,163 real lumps hashed), cycle=%0d", cycle_count);
+            end
+            if (!seen_readlump && pc_out == ADDR_W_READLUMP) begin
+                seen_readlump <= 1'b1;
+                $display("[MILESTONE] W_ReadLump reached -- first real WAD lump CONTENT access attempted, cycle=%0d", cycle_count);
+            end
+            if (!seen_rinit && pc_out == ADDR_R_INIT) begin
+                seen_rinit <= 1'b1;
+                $display("[MILESTONE] R_Init reached -- rendering subsystem initialization begins, cycle=%0d", cycle_count);
+            end
+            if (!seen_drawframe && pc_out == ADDR_DG_DRAWFRAME) begin
+                seen_drawframe <= 1'b1;
+                $display("[MILESTONE] DG_DrawFrame reached -- first frame-draw call, cycle=%0d", cycle_count);
             end
 
             if (mem_valid && mem_ready && (|mem_wstrb) &&
