@@ -42,4 +42,14 @@ The real, complete DoomGeneric engine (86 compilation units, GPL-2.0, pinned com
 
 **Not attempted this session**: running the compiled binary on `cpu_core` via Animas. Measured reason (not assumed): the SD-transfer pipeline's realistic per-sector timing, extrapolated from M4's actual measurement, puts an 800KB+ payload's transfer time in a wall-clock range this session's remaining time couldn't responsibly absorb. Concrete next step recorded in `PROJECT_STATE.md`: a direct-SDRAM-preload fast-path testbench, bypassing the (already-verified, just slow-to-simulate-at-scale) SD path for large-payload iteration. Full writeup: `docs/verification_report.md`'s M5 section, `software/source-lock.json`.
 
-## M6: not started
+## M6 — Quartus handoff: **DONE** (2026-11-08)
+
+`rtl/board/de2_115_top.sv` written (every port matching `docs/pin_assignments.csv`) and smoke-tested via Animas (`sim/tb/board_top_smoke_tb.sv`, 3/3 PASS — CPU runs after reset, no illegal_instr, structural connectivity confirmed). `scripts/pin_audit.py` extended with a top-level port cross-check against the real RTL file (0 errors across 26 signals/132 pins). `fpga/de2_115/doom_riscv_de2_115.{qpf,qsf,sdc}` hand-written — each file's own header states plainly that it was not produced by actually running Quartus. Three physical-confirmation items correctly left unresolved rather than guessed: device speed grade (`EP4CE115F29C7`'s `C7` flagged as common-default-not-confirmed), KEY/SW I/O standard (no `IO_STANDARD` assignment at all, pending JP7 jumper reading), and SD card electrical compatibility.
+
+Four new docs: `docs/module_interfaces.md` (every module's port list/bus protocol), `docs/clock_reset_cdc.md` (the `clk`/`pclk` generated-clock relationship, async reset strategy, and the one real CDC in the design — framebuffer scan-out's combinational `pclk`-domain read against `clk`-domain-written BRAM), `docs/fpga_handoff.md` (human-team build order + the M5 DOOM-execution-gap called out explicitly), `docs/how_to_run_doom.md` (operator steps — surfaced a genuine, previously-undocumented-at-this-specificity gap: `bootloader_main.c` never reads the WAD-related header fields, so it loads the program but not the WAD, even though `prepare_sd_image.py` already supports embedding one).
+
+Full writeup: `docs/fpga_handoff.md`, `docs/module_interfaces.md`, `docs/clock_reset_cdc.md`, `docs/how_to_run_doom.md`. Evidence: `research/results/m6_board_top_smoke.log`.
+
+## Overall status after M6
+
+M0-M4 and M6 are fully done and verified. M5 is the one open gap in the whole project: DOOM compiles/links cleanly (S0-S2) but has never been executed on `cpu_core`, in simulation or otherwise (S3-S4 not attempted) — see `PROJECT_STATE.md`'s "concrete next step" for the direct-SDRAM-preload testbench that would unblock it, and `docs/fpga_handoff.md` §4 / `docs/how_to_run_doom.md` for the honest, explicit statement of that gap plus the separate bootloader WAD-copy gap found while writing the M6 docs.

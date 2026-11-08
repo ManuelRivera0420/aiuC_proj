@@ -1,0 +1,11 @@
+Zenith Simulator v1.0.2, sim_top=sim/tb/board_top_smoke_tb.sv
+Elaboration/connectivity smoke test for rtl/board/de2_115_top.sv -- the
+first real board-level top module, wiring cpu_core+soc_bus+vga together
+with port names/widths matching docs/pin_assignments.csv exactly.
+------------------------------------------------------------
+[PASS] cpu pc advanced past reset vector
+[PASS] not illegal_instr this early
+[PASS] sd_clk is toggling (sd_spi reset+running)
+TOTAL CHECKS=3 ERRORS=0
+BOARD_TOP_SMOKE_RESULT: PASS
+[sim] $finish at time 2100 (exit code 0)

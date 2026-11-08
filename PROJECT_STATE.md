@@ -2,9 +2,9 @@
 
 **Read this file first in any new session.** It is the single source of truth for what is actually done, what is in progress, and exactly how to resume.
 
-Last updated: 2026-11-08T02:50Z, by this session, at start of M6.
+Last updated: 2026-11-08, by this session, at end of M6.
 
-## Current milestone: M6 (Quartus handoff) — STARTING. M5 is PARTIAL (S0-S2 done, S3-S4 not attempted).
+## Current milestone: M6 (Quartus handoff) — DONE. M5 is PARTIAL (S0-S2 done, S3-S4 not attempted — this is the one open item left in the whole project; see below).
 
 ## Completed and VERIFIED (committed, Animas-confirmed)
 
@@ -13,7 +13,8 @@ Last updated: 2026-11-08T02:50Z, by this session, at start of M6.
 - **M2** — bare-metal firmware boot (S0/S1 gates), 6/6 checks PASS. Commit `1f0fdfb`.
 - **M3** — all board peripherals verified standalone. Commits `0de834d`, `9e34864`, `2c0db5c`, `a0860c5`, `cd53bd0`.
 - **M4** — full SoC integration (real SD boot image → bootloader → cpu_core → SDRAM → jump → framebuffer → VGA), 7/7 checks PASS. Commit `03d0df7`.
-- **M5 (partial)** — real DoomGeneric compiles+links clean for RV32IM/ILP32 (S0-S2 gates), 0 unsupported-instruction hits. Framebuffer reformatted to the real 8-bit-indexed+palette format, re-verified 7/7 PASS. Commits `a7e4132` (fetch+finding), `a75f57b` (framebuffer reformat). **The actual DOOM compile/link milestone itself — check `git log --oneline` for the commit immediately after this file's previous version; it may not be committed yet if you're reading this mid-session.**
+- **M5 (partial)** — real DoomGeneric compiles+links clean for RV32IM/ILP32 (S0-S2 gates), 0 unsupported-instruction hits. Framebuffer reformatted to the real 8-bit-indexed+palette format, re-verified 7/7 PASS. Commits `a7e4132` (fetch+finding), `a75f57b` (framebuffer reformat).
+- **M6 (done)** — `rtl/board/de2_115_top.sv` written and smoke-tested via Animas (`sim/tb/board_top_smoke_tb.sv`, 3/3 PASS). `scripts/pin_audit.py` extended with a top-level port cross-check (0 errors across 26 signals/132 pins). `fpga/de2_115/doom_riscv_de2_115.{qpf,qsf,sdc}` hand-written (not Quartus-generated; device speed grade and KEY/SW I/O standard both explicitly flagged rather than guessed — see those files' own headers and `docs/fpga_handoff.md` §2). `docs/{module_interfaces,clock_reset_cdc,fpga_handoff,how_to_run_doom}.md` written. See the commit immediately after this file's previous version for the exact file list.
 
 ## M5's honest status — read this before doing anything with DOOM
 
@@ -57,6 +58,9 @@ Animas project id `bff69947-9fc3-408f-bc64-4efffd9b8fe1`. `sim_top` was last set
 - `firmware/platform/syscalls.c` — the ~14-function Newlib syscall stub layer.
 - `scripts/build_doom.sh` — builds all of the above into `firmware/build/doom/doom.elf`.
 - `software/source-lock.json` — DoomGeneric/Freedoom provenance, the pixel-format finding with citations.
+- `rtl/board/de2_115_top.sv` — board-level top, instantiates `cpu_core`+`soc_bus`+`vga` directly, every port matching `docs/pin_assignments.csv`. Smoke-tested (3/3 PASS), not synthesized.
+- `fpga/de2_115/doom_riscv_de2_115.{qpf,qsf,sdc}` — hand-written Quartus project files for human-team handoff. Never opened in real Quartus by this project.
+- `scripts/pin_audit.py` — now cross-checks the CSV against `de2_115_top.sv`'s real ports too, not just self-consistency.
 
 ## Lessons learned, cumulative (don't rediscover these)
 
@@ -76,16 +80,16 @@ Animas project id `bff69947-9fc3-408f-bc64-4efffd9b8fe1`. `sim_top` was last set
 14. **Before assuming a third-party codebase needs patching for platform integration, check whether it already has an extension point** — DoomGeneric's swappable WAD-backend vtable and its deliberately-non-static `colors`/`palette_changed` globals under `CMAP256` both existed specifically for this purpose; patching would have been unnecessary extra risk.
 15. **"Compiles and links" is not "runs" — don't let a big static-gate win create momentum toward claiming more than was actually verified.** This file's own M5 section is deliberately blunt about the line between the two.
 
-## M6 plan (Quartus handoff — in progress)
+## M6 plan (Quartus handoff — DONE)
 
-Per the mission's M6 gate and Section 4/7's repo structure requirements. Does not depend on M5's runtime gap — can proceed now.
+Per the mission's M6 gate and Section 4/7's repo structure requirements. Did not depend on M5's runtime gap — proceeded independently of it, as planned.
 
-- [ ] `docs/module_interfaces.md` + `docs/clock_reset_cdc.md` — document each RTL module's port interface and the clock/reset/CDC plan (mostly already implicit in existing module header comments; this pass makes it explicit and centralized).
-- [ ] `rtl/board/de2_115_top.sv` — the real board-level top module, every port name matching `docs/pin_assignments.csv` exactly. Must NOT guess the KEY/SW I/O standard — leave it parameterized/flagged pending the human-confirmed JP7 reading (tracked since M3).
-- [ ] `fpga/de2_115/doom_riscv_de2_115.{qpf,qsf,sdc}` — Quartus project files. `.qsf` pin assignments drawn directly from `docs/pin_assignments.csv`. `.sdc` gets honest, justified constraints (50MHz `CLOCK_50`, generated-clock relationships for any derived clocks) — no fabricated false-paths to look clean.
-- [ ] Extend `scripts/pin_audit.py` to parse `rtl/board/de2_115_top.sv`'s actual port list and cross-check against `docs/pin_assignments.csv` (currently only self-checks the CSV; the file to check against didn't exist until this milestone).
-- [ ] `docs/fpga_handoff.md` — the human team's complete build-order/dependency/next-steps document, explicitly listing what's verified-in-Animas vs. what still needs physical confirmation (JP6/JP7 jumpers, the ADATA card's real SPI compatibility, SDRAM chip geometry/timing, Fmax/timing closure — all already flagged individually across `docs/known_limitations.md`, consolidated here for the handoff reader).
-- [ ] `docs/how_to_run_doom.md` — operator's guide, building on `docs/boot_process.md` and `docs/sd_card_preparation.md`, honest about M5's current state (compiles, hasn't been run end-to-end yet) rather than implying a finished product.
+- [x] `docs/module_interfaces.md` + `docs/clock_reset_cdc.md` — every RTL module's port interface, the two clock domains (`clk`/`pclk`, `pclk` a divide-by-2 generated clock off `clk`, no PLL), the async-reset strategy, and the one real CDC in the whole design (framebuffer scan-out: `pclk`-domain combinational read against `clk`-domain-written BRAM, no synchronizer — documented as a bounded, cosmetic-worst-case risk, not swept under the rug).
+- [x] `rtl/board/de2_115_top.sv` — the real board-level top module, every port matching `docs/pin_assignments.csv` exactly (mechanically cross-checked, see next item). KEY/SW I/O standard correctly left unassigned in the `.qsf` rather than guessed (see below).
+- [x] `fpga/de2_115/doom_riscv_de2_115.{qpf,qsf,sdc}` — Quartus project files, hand-written and explicitly labeled as such in each file's header. `.qsf` pin assignments generated directly from `docs/pin_assignments.csv` (132 pins); KEY[0:3]/SW[0:17] deliberately have NO `IO_STANDARD` line (flagged as JP7-blocked, not guessed); device set to `EP4CE115F29C7` with the `C7` speed-grade digit explicitly flagged as the common-default-not-confirmed value. `.sdc` declares `CLOCK_50` (50MHz) and `VGA_CLK` as a proper `create_generated_clock -divide_by 2`, sets `set_false_path` only where this project's own RTL/sim actually justifies it (async KEY/SW/SD_DAT[0] inputs), and explicitly does NOT fabricate `set_input_delay`/`set_output_delay` values it has no basis for — left as a named human-team follow-up instead.
+- [x] Extended `scripts/pin_audit.py` with `parse_top_level_ports()` (regex-based port extraction) and a bidirectional cross-check against `rtl/board/de2_115_top.sv` — run as `python3 scripts/pin_audit.py docs/pin_assignments.csv rtl/board/de2_115_top.sv`, currently **0 errors** across 26 signals/132 pins.
+- [x] `docs/fpga_handoff.md` — the human team's complete build-order document: what's provided, the three unresolved physical-confirmation items (device speed grade, JP6/JP7 jumper reading, SD card electrical compatibility) that block a correct Quartus compile, the build order itself, and — most importantly — an explicit, unambiguous statement of the M5 DOOM-execution gap (§4) so no one mistakes "compiles cleanly" for "runs."
+- [x] `docs/how_to_run_doom.md` — operator's guide for the DOOM path specifically. Documents a genuine, previously-undocumented-at-this-level-of-specificity gap found while writing it: `firmware/bootloader/bootloader_main.c`'s `main()` only reads header words `[0..5]` (magic/version/load_addr/entry_addr/length/prog_lba_start) and never touches `header[6]`/`header[7]` (`wad_lba_start`/`wad_length`) — so it copies the program but never the WAD, even though `scripts/prepare_sd_image.py` already supports embedding one. Small, mechanical fix (repeat the existing copy loop over a second LBA range into `WAD_SDRAM_BASE = 0x14000000`), explicitly scoped as a near-term human-team (or future-session) task, not done in this pass because M6's own deliverables took priority.
 
 ## Scope decisions recorded so far (so they aren't re-litigated or silently reversed later)
 

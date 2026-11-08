@@ -28,3 +28,9 @@ utc_ts,milestone,metric,value,unit
 2026-11-08T02:40:00Z,M5,doom_text_bytes,504420,bytes
 2026-11-08T02:40:00Z,M5,doom_unsupported_instruction_hits,0,count
 2026-11-08T02:40:00Z,M5,doom_build_iterations_to_clean_link,3,count
+2026-11-08T03:15:00Z,M6,pin_audit_signals_checked,26,count
+2026-11-08T03:15:00Z,M6,pin_audit_pins_checked,132,count
+2026-11-08T03:15:00Z,M6,pin_audit_errors,0,count
+2026-11-08T03:15:00Z,M6,board_top_smoke_checks_passed,3,count
+2026-11-08T03:15:00Z,M6,board_top_smoke_checks_total,3,count
+2026-11-08T03:15:00Z,M6,new_docs_written,4,count

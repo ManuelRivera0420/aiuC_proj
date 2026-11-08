@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-07T22:22:14.570917+00:00",
+    "modified": "2026-11-08T00:59:15.665855+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -152,12 +152,22 @@
       "path": "sim/tb/m4_e2e_tb.sv",
       "role": "simulation",
       "library": "work"
+    },
+    {
+      "path": "rtl/board/de2_115_top.sv",
+      "role": "rtl",
+      "library": "work"
+    },
+    {
+      "path": "sim/tb/board_top_smoke_tb.sv",
+      "role": "simulation",
+      "library": "work"
     }
   ],
   "folders": [],
   "settings": {
-    "top_module": "counter",
-    "sim_top": "sim/tb/m4_e2e_tb.sv",
+    "top_module": "de2_115_top",
+    "sim_top": "sim/tb/board_top_smoke_tb.sv",
     "target_device": "",
     "sim_tool": "zenith",
     "synth_tool": "yosys",
