@@ -160,7 +160,15 @@ module m5_doom_exec_tb;
     localparam logic [31:0] ADDR_W_ADDFILE         = 32'h100392d4; // W_AddFile entry (header+directory read happens inside)
     localparam logic [31:0] ADDR_D_IDENTIFYVERSION = 32'h10004118; // D_IdentifyVersion entry (W_AddFile returned OK)
     localparam logic [31:0] ADDR_D_DOOMLOOP        = 32'h10003d24; // D_DoomLoop entry (D_DoomMain's init fully completed)
-    logic seen_findiwad, seen_addfile, seen_identify, seen_doomloop;
+    // Explicit initializers -- without them these default to X (unknown)
+    // at time 0, and `!X && ...` stays X forever, which SystemVerilog's
+    // `if` treats as false permanently: a real bug, found by noticing no
+    // [MILESTONE] line ever printed despite pc_out demonstrably having
+    // passed through every one of these addresses (confirmed via the
+    // periodic [progress] samples). Same bug class analyzed earlier in
+    // this project re: DOOM's own code reacting to X -- made the mistake
+    // here in the testbench itself instead.
+    logic seen_findiwad = 1'b0, seen_addfile = 1'b0, seen_identify = 1'b0, seen_doomloop = 1'b0;
 
     always @(posedge clk) begin
         if (rst_n) begin
