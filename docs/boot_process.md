@@ -11,6 +11,7 @@ Full cold-boot sequence, M4 implementation. "Verified" below means `sim/tb/m4_e2
 5. **Read LBA 0** (the boot image header) via `CMD17`: the bootloader issues the read, polls busy, then reads 128 words from `REG_BUF_DATA`.
 6. **Validate magic**: `header[0]` must equal `0x4D445652` — the four ASCII bytes `R`,`V`,`D`,`M` read as a little-endian `u32` (see `scripts/prepare_sd_image.py`'s header layout). If not: **LED = `0x3`**, halt.
 7. **LED = `0x4`** (`LED_BOOT_LOADING`): read `header[2]` (load address), `header[3]` (entry address), `header[4]` (program length), `header[5]` (program's first LBA, always `1`). Compute sector count, then loop: `CMD17` each sequential LBA, copy its 128 words directly into SDRAM at `load_addr + sector_index*512`.
+7a. **LED = `0x6`** (`LED_BOOT_LOADING_WAD`), only if `header[6]` (`wad_lba_start`) is nonzero: read `header[7]` (`wad_length`) and loop `CMD17` the same way, copying into a fixed `0x1400_0000` (`WAD_SDRAM_BASE`, matching `software/doom_port/w_file_de2115.c`) rather than anywhere derived from the image header — the WAD's destination is a property of the *firmware being booted* (where it expects to find its WAD), not of the image. Every boot image built before this step existed (every image `scripts/prepare_sd_image.py` was run on without `--wad`) has `wad_lba_start=0`, so this step is a no-op for them — same bootloader behavior as before.
 8. **LED = `0x5`** (`LED_BOOT_JUMPING`): call the loaded program as a function pointer at `entry_addr`. This is a real `jalr`, not a simulated transfer — `cpu_core`'s PC genuinely moves into SDRAM-resident code at this point.
 9. The loaded program runs its own `crt0` (here, `firmware/startup/crt0.S` — no ROM/RAM split needed since the bootloader already placed its full image, including `.data`'s initial values, directly at the program's linked addresses), clears `.bss`, and calls `main()`.
 10. The loaded program interacts with the VGA framebuffer (`0x3000_0000`+) and any other peripheral directly through the same memory map every other milestone's firmware has used.
@@ -28,6 +29,7 @@ Full cold-boot sequence, M4 implementation. "Verified" below means `sim/tb/m4_e2
 | `0x2` | SD/SPI error (no card, bad echo, timeout, not SDHC — see `docs/sdhc_32gb_boot_protocol.md`'s error table for the specific `sd_spi.sv` error code, visible via `REG_STATUS` bits `[7:4]` to a debugger even though the bootloader's own LED code doesn't distinguish them yet) |
 | `0x3` | Boot image magic mismatch (corrupted card / wrong image / card not prepared) |
 | `0x4` | Loading program into SDRAM |
+| `0x6` | Loading WAD into SDRAM (only appears if the boot image has one embedded — see step 7a) |
 | `0x5` | Jumping to the loaded program's entry point |
 | `0xF` | Loaded program unexpectedly returned to the bootloader (should never happen) |
 

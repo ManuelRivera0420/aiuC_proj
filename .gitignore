@@ -4,3 +4,12 @@ firmware/build/*.elf
 firmware/build/*.bin
 .build_tmp/
 firmware/build/doom/
+
+# M5 S3 direct-SDRAM-preload test artifacts: large, regeneratable binary/hex
+# derivatives (freedoom1.hex alone is ~62MB, derived from a WAD that isn't
+# committed either -- see software/source-lock.json). jump_stub.S itself
+# (the actual hand-written source) is NOT excluded by this pattern.
+sim/models/m5_exec/*.bin
+sim/models/m5_exec/*.hex
+sim/models/m5_exec/*.o
+sim/models/m5_exec/*.elf

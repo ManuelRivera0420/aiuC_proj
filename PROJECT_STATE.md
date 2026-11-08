@@ -2,9 +2,17 @@
 
 **Read this file first in any new session.** It is the single source of truth for what is actually done, what is in progress, and exactly how to resume.
 
-Last updated: 2026-11-08, by this session, at end of M6.
+Last updated: 2026-11-08, by this session, mid-run on M5's S3 attempt.
 
-## Current milestone: M6 (Quartus handoff) — DONE. M5 is PARTIAL (S0-S2 done, S3-S4 not attempted — this is the one open item left in the whole project; see below).
+## Current milestone: M6 (Quartus handoff) — DONE. M5's S3 direct-execution attempt is IN PROGRESS (not yet concluded) — see below for exactly how to check on it or resume it.
+
+## If you're resuming because the session ended mid-run: check this FIRST
+
+A real simulation (`sim/tb/m5_doom_exec_tb.sv`, Animas project id below, already set as `sim_top`) was left running when this file was last updated. Before doing anything else:
+
+1. Call `get_last_sim_result(project_id)`. If `log_line_count` has grown past 95 and/or `finished` is `true`, read `read_simulation_log(last_n_lines=30)` for the `[RESULT]` line the testbench prints (ILLEGAL_INSTR / HALTED / FRAMEBUFFER FULLY WRITTEN / WATCHDOG) and write that outcome into `docs/verification_report.md`'s "M5 — S3 direct-execution attempt" section (currently marked IN PROGRESS) and into the "Completed and VERIFIED" list below. Do NOT re-trigger `run_simulation` first — you'd lose whatever progress already happened; check the existing result first.
+2. If it's still at `log_line_count=95` (last known value) and not finished: it's probably still genuinely running (confirmed once already via direct host `ps` inspection showing a live, CPU-accumulating `zenith` subprocess under `marivera`, parented by `animas-backend` — not a repeat of the earlier daemon-lock issue). Check `ps -u marivera -o pid,pcpu,etimes,stat,cmd | grep zenith` yourself before assuming it's stuck; only consider it a genuine blocker if that shows no live process or a zombie with no forward progress across multiple checks spaced several minutes apart.
+3. This specific test is known to run **slowly** in `ui_remote_control` mode (full CPU+bus+SDRAM RTL, toggling every cycle, for up to `WATCHDOG_CYCLES=60_000_000` cycles) — budget real patience, not a quick poll-and-give-up.
 
 ## Completed and VERIFIED (committed, Animas-confirmed)
 
@@ -18,18 +26,11 @@ Last updated: 2026-11-08, by this session, at end of M6.
 
 ## M5's honest status — read this before doing anything with DOOM
 
-**Done (verified)**: DoomGeneric compiles and links. **Not done**: executing it on `cpu_core`. Do NOT conflate these. See `docs/verification_report.md`'s M5 section for the full reasoning. In short: the compiled binary is ~566KB of `.text`+`.data` that would need ~1,106 individual CMD17 sector reads through the already-verified-but-slow-to-simulate-at-scale SD pipeline (M4 measured ~9ms of simulated time for 2 sectors' worth of init+transfer; this scales up to an impractical wall-clock risk for 1,106+ sectors, especially combined with `ui_remote_control` mode's observed slowness for fine-grained-toggle-heavy tests).
+**Done (verified)**: DoomGeneric compiles and links (S0-S2). **In progress, not yet concluded**: executing it on `cpu_core` (S3) — see the "if you're resuming mid-run" section above. Do NOT conflate "compiles" with "runs," and do NOT conflate "a test is running" with "a test has passed" — check the actual `[RESULT]` line before writing anything into the verified-list above.
 
-### Concrete next step for M5 (do this first when resuming)
+The direct-SDRAM-preload fast-path testbench this section used to describe as a future plan now exists: `sim/tb/m5_doom_exec_tb.sv`, using `sdram_model.sv`'s new `PRELOAD1_FILE`/`PRELOAD2_FILE` parameters (option 1 from the old plan) and `soc_bus.sv`'s new `BOOT_ROM_FILE` parameter (so this test's custom 2-instruction jump-to-entry boot ROM, `sim/models/m5_exec/jump_stub.S`, doesn't clobber M3/M4's shared `sim/models/soc_rom.hex`). Two real things were found and fixed while building it — a `ZEN-6033` LRM violation (same bug class as M1's `sync_mem.sv` fix) and a host-scale limitation preloading the full 28MB WAD (see `docs/verification_report.md`'s M5 S3 section for both, in detail). The real freedoom1.wad (hash-verified against `software/source-lock.json`) lives at `.build_tmp/freedoom-0.13.0/freedoom1.wad` if a future attempt wants to retry WAD preloading with a smaller chunk or a different approach than one giant associative-array loop.
 
-Build a **direct-SDRAM-preload fast-path testbench** — bypass the SD/bootloader path entirely for this specific test (the SD path itself is already proven correct in M4; re-proving it at a slow, large scale adds simulation time, not confidence). Two ways to do it, pick whichever is less work once you're looking at the code:
-
-1. Add a `$readmemh`-based bulk-preload mode to `sim/models/sdram_model.sv` (an `initial` block that, given an optional `INIT_FILE` parameter, populates `mem_store[]` at specific {bank,row,col} keys computed from a flat byte array — needs to replicate `sdram_ctrl.sv`'s address decomposition, documented in that file's header comment: `bank=word_addr[24:23]`, `row=word_addr[22:10]`, `col=word_addr[9:0]`).
-2. Or: write a new testbench that, in its `initial` block before releasing reset, directly pokes `u_sdram_model.mem_store[key]` for each word of `doom.elf`'s `.text`+`.data`, using the SAME address decomposition — a one-time, test-only convenience, clearly commented as such (not a claim that real hardware works this way).
-
-Either way: set PC to the DOOM binary's actual entry (`_start` at `0x10000000`, confirmed via `nm` — see `research/results/m5_doom_compile_link_isa_gate.log`), run, and see how far it gets. Expect it to fail at the WAD-open step (no real WAD is present yet — `software/doom_port/w_file_de2115.c`'s `WAD_SDRAM_BASE` region won't have anything meaningful in it until the bootloader is extended to copy the WAD too, which is its own separate future step) — but getting hundreds of KB of real DOOM engine code to execute correctly up to that point on the RTL CPU would be a genuinely strong, honest S3 gate result, clearly distinct from a full DOOM PASS.
-
-**Rebuild command** (if `firmware/build/doom/doom.elf` is stale or missing): `bash scripts/build_doom.sh`. Takes under a minute; no Animas needed for this step.
+**Rebuild command** (if `firmware/build/doom/doom.elf` is stale or missing): `bash scripts/build_doom.sh`. Takes under a minute; no Animas needed for this step. The preload hex files (`sim/models/m5_exec/*.hex`, gitignored) are regenerated via `scripts/bin_to_readmemh.py` — see `sim/tb/m5_doom_exec_tb.sv`'s header for exact paths/sizes expected.
 
 ## Environment facts needed to resume work (do not re-derive, just reuse)
 
@@ -79,6 +80,9 @@ Animas project id `bff69947-9fc3-408f-bc64-4efffd9b8fe1`. `sim_top` was last set
 13. **Before hand-writing a libc, try actually linking against what the toolchain bundles** — Newlib was there the whole time, built for the exact target triple, and discovering the ~14 needed syscall stubs by reading real linker errors took minutes, not the hours a from-scratch libc would have.
 14. **Before assuming a third-party codebase needs patching for platform integration, check whether it already has an extension point** — DoomGeneric's swappable WAD-backend vtable and its deliberately-non-static `colors`/`palette_changed` globals under `CMAP256` both existed specifically for this purpose; patching would have been unnecessary extra risk.
 15. **"Compiles and links" is not "runs" — don't let a big static-gate win create momentum toward claiming more than was actually verified.** This file's own M5 section is deliberately blunt about the line between the two.
+16. **A preload/bulk-write mechanism added to a model with an existing `always_ff` writer of the same array must write from inside that SAME process, not a separate `initial` block** — ZEN-6033 (LRM 9.2.2.4) rejects two processes writing one variable even when their actual write targets never overlap at runtime; the elaborator checks statically, not by value.
+17. **A multi-million-entry SystemVerilog associative array populated via a procedural loop can be dramatically slower (or get the simulator subprocess stuck/zombied) than the same mechanism at thousands-of-entries scale** — tested directly (7.2M WAD words vs. 141K program words on the exact same mechanism), not assumed; descope to the smaller, still-meaningful version rather than burning unbounded time chasing the larger one.
+18. **A live `ps`/`/proc` check of the actual host process (state, accumulated CPU time across repeated samples) is the way to tell "genuinely still running" apart from "silently stuck" when an MCP tool's own status call keeps returning the same unchanged snapshot** — don't conflate "no new log output" with "nothing is happening."
 
 ## M6 plan (Quartus handoff — DONE)
 

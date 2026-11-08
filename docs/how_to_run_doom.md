@@ -1,16 +1,12 @@
 # How to Run DOOM on This Board — Operator Guide (M6)
 
-This is step-by-step instructions for the specific DOOM path, written for whoever picks up hardware bring-up after `docs/fpga_handoff.md`'s general build order. Read that document's §4 first if you haven't — this guide assumes you already know the headline fact: **DOOM compiles and links perfectly for this CPU but has never been executed on it, in simulation or on hardware**, and the bootloader needs one small addition before it can work at all. Nothing below pretends otherwise.
+This is step-by-step instructions for the specific DOOM path, written for whoever picks up hardware bring-up after `docs/fpga_handoff.md`'s general build order. Read that document's §4 first if you haven't — this guide assumes you already know the headline fact: **DOOM compiles and links perfectly for this CPU, and a direct-SDRAM-preload test has now actually executed real, compiled DOOM engine code on `cpu_core` (see `docs/verification_report.md`'s M5 S3 section for exactly how far) — but it has never been exercised through the real SD/bootloader path or on physical hardware.** Nothing below pretends otherwise.
 
-## Prerequisite: one bootloader change you must make first
+## The bootloader now copies the WAD too
 
-`firmware/bootloader/bootloader_main.c` currently reads the SD boot image's header and copies **only the program** into SDRAM — it never looks at the WAD fields. The header format already has everything needed (`scripts/prepare_sd_image.py`'s `HEADER_FIELDS`, also already supports a `--wad` flag at image-build time); the bootloader just doesn't consume it yet. Specifically, add a second copy loop after the existing program-copy loop in `main()`:
+`firmware/bootloader/bootloader_main.c` originally only copied the program from the SD image into SDRAM, never the WAD, even though the boot image format already had the fields for it (`scripts/prepare_sd_image.py`'s `wad_lba_start`/`wad_length`). This has since been extended: `main()` now reads `header[6]`/`header[7]` and, if `wad_lba_start` is nonzero, copies the WAD into `WAD_SDRAM_BASE` (`0x1400_0000` — matching `software/doom_port/w_file_de2115.c`) the same way it already copied the program, with a new `LED_BOOT_LOADING_WAD` (`0x6`) status code while it does (see `docs/boot_process.md`). Boot images built without `--wad` (every image built before this change existed) have `wad_lba_start=0`, so this step is a no-op for them — existing behavior is unchanged.
 
-- `header[6]` = `wad_lba_start` (0 if no WAD was embedded — check this before copying)
-- `header[7]` = `wad_length` (bytes)
-- Destination: `WAD_SDRAM_BASE` (`0x1400_0000`), the address `software/doom_port/w_file_de2115.c` already assumes the WAD lives at — grep that file for `WAD_SDRAM_BASE` to confirm it hasn't drifted before you hardcode the same value in the bootloader.
-
-This is a small, mechanical change (literally the same `sdspi_read_block` loop already in the file, run a second time over a different LBA range into a different destination address) — it was not done in this project's session because the session's remaining time went to the higher-priority M6 Quartus handoff items instead, not because it's hard. Do this before step 3 below; everything before that point works today.
+**Not yet re-verified through `sim/tb/m4_e2e_tb.sv`** with this new code path exercised (that test's boot image has no WAD, so it only exercises the no-op branch) — worth doing before trusting this on hardware, though the change is small and additive enough that it's a reasonable risk to proceed past.
 
 ## Step 1: build the DOOM binary
 
@@ -50,7 +46,7 @@ Write `sd_image.bin` to the physical SD card as a raw image (`dd` or equivalent)
 
 ## Step 4: program the board and watch the LEDs
 
-With the WAD-copy change from the prerequisite section in place, boot should proceed through the LED status codes already defined in `firmware/bootloader/bootloader_main.c` / documented in `docs/boot_process.md` (`LED_BOOT_SDSPI_INIT` → `LED_BOOT_LOADING` → `LED_BOOT_JUMPING`, or a `_ERROR`/`_BAD_MAGIC` code if something's wrong before that). Getting to `LED_BOOT_JUMPING` means the SD read path, the program copy, and (once added) the WAD copy all worked — this itself is new, real information the first time you run it, since M4's simulation only ever exercised a ~200-byte test program, not an 800KB+ real binary, through the live SD timing.
+Boot should proceed through the LED status codes defined in `firmware/bootloader/bootloader_main.c` / documented in `docs/boot_process.md` (`LED_BOOT_SDSPI_INIT` → `LED_BOOT_LOADING` → `LED_BOOT_LOADING_WAD` → `LED_BOOT_JUMPING`, or a `_ERROR`/`_BAD_MAGIC` code if something's wrong before that). Getting to `LED_BOOT_JUMPING` means the SD read path, the program copy, and the WAD copy all worked — this itself is new, real information the first time you run it, since M4's simulation only ever exercised a ~200-byte test program, not an 800KB+ real binary plus a 28MB WAD, through the live SD timing.
 
 **Be ready for this to simply not work on the first attempt.** Nothing from here on has been exercised against real SPI electrical timing, a real SD card's actual response latencies, or this specific DOOM binary's actual runtime behavior on `cpu_core` — only against `sim/models/sdhc_spi_model.sv`'s idealized SPI slave and, for every *other* firmware tested in this project, much smaller programs. If it hangs at `LED_BOOT_LOADING`, suspect the SPI clock divider (`rtl/peripherals/sd_spi.sv`'s `FAST_CLK_DIV=4`, flagged in `docs/fpga_handoff.md` §2 as never validated against real card timing) before suspecting the RTL logic itself, which has passed every simulation test this project could devise.
 

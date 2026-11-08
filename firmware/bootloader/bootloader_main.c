@@ -36,6 +36,7 @@ typedef unsigned int u32;
 #define LED_BOOT_BAD_MAGIC    0x3u
 #define LED_BOOT_LOADING      0x4u
 #define LED_BOOT_JUMPING      0x5u
+#define LED_BOOT_LOADING_WAD  0x6u
 
 static void halt_blink(u32 code) {
     for (;;) {
@@ -62,6 +63,7 @@ static u32 sdspi_read_block(u32 lba, u32 *dest, u32 word_count) {
 int main(void) {
     u32 header[128]; /* one full 512-byte sector */
     u32 magic, load_addr, entry_addr, length, prog_lba_start;
+    u32 wad_lba_start, wad_length;
     u32 num_sectors, i;
     volatile u32 *sdram_dst;
 
@@ -84,6 +86,8 @@ int main(void) {
     entry_addr     = header[3];
     length         = header[4];
     prog_lba_start = header[5];
+    wad_lba_start  = header[6];
+    wad_length     = header[7];
 
     if (magic != IMG_MAGIC_LE) {
         halt_blink(LED_BOOT_BAD_MAGIC);
@@ -102,6 +106,33 @@ int main(void) {
         }
         for (w = 0; w < 128; w++) {
             sdram_dst[i * 128u + w] = sector_words[w];
+        }
+    }
+
+    /* WAD copy: optional -- wad_lba_start is 0 when prepare_sd_image.py
+       was run without --wad (every image this project has built so far),
+       so this is a no-op for every boot image that predates it, same
+       behavior as before this was added. software/doom_port/
+       w_file_de2115.c assumes the WAD lands at a fixed 0x14000000
+       regardless of what this specific image's load_addr/length were --
+       that address is intentionally hardcoded here too rather than
+       derived from the header, since it's a property of the FIRMWARE
+       being booted (where it expects its WAD), not of the image. */
+    if (wad_lba_start != 0u) {
+        u32 *const wad_dst = (u32 *)0x14000000u;
+        u32 wad_num_sectors = (wad_length + 511u) / 512u;
+
+        POKE(GPIO_LED_STATUS, LED_BOOT_LOADING_WAD);
+
+        for (i = 0; i < wad_num_sectors; i++) {
+            u32 sector_words[128];
+            u32 w;
+            if (sdspi_read_block(wad_lba_start + i, sector_words, 128)) {
+                halt_blink(LED_BOOT_SDSPI_ERROR);
+            }
+            for (w = 0; w < 128; w++) {
+                wad_dst[i * 128u + w] = sector_words[w];
+            }
         }
     }
 

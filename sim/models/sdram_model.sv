@@ -8,7 +8,25 @@
 // sequencing bugs (e.g. issuing ACTIVATE/READ before the controller's own
 // init sequence would have issued PRECHARGE/REFRESH/MRS first).
 module sdram_model #(
-    parameter int CAS_LATENCY = 2
+    parameter int CAS_LATENCY = 2,
+
+    // ---- M5 S3 test-only direct preload ----
+    // Bypasses the slow, already-verified-at-small-scale SD/bootloader
+    // copy path (M4) for large-payload tests where simulating a
+    // realistic CMD17 transfer would cost an impractical amount of
+    // simulated time (see docs/verification_report.md's M5 section).
+    // Each region is optional (empty *_FILE = skip) and is populated
+    // once, in simulation time 0 before any clock edge -- this is
+    // exactly as synthesizable as $readmemh itself, i.e. not at all;
+    // it exists only so a testbench can get real program/data content
+    // into this behavioral model's backing store without re-proving
+    // the SD path at a scale it was never meant to be driven at.
+    parameter string        PRELOAD1_FILE       = "",
+    parameter int           PRELOAD1_WORDS      = 0,
+    parameter logic [31:0]  PRELOAD1_BYTE_BASE  = 32'h0,
+    parameter string        PRELOAD2_FILE       = "",
+    parameter int           PRELOAD2_WORDS      = 0,
+    parameter logic [31:0]  PRELOAD2_BYTE_BASE  = 32'h0
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -79,6 +97,24 @@ module sdram_model #(
         pack_key = {b, r, c};
     endfunction
 
+    // ---- test-only bulk preload (see module header) ----
+    // $readmemh only ever targets preload1_mem/preload2_mem here (never
+    // mem_store directly) so this initial block doesn't become a second
+    // process writing mem_store -- the actual mem_store[...] = ... copy
+    // happens inside the always_ff below, in its reset branch, which is
+    // the SAME process as mem_store's other writer (the CMD_WRITE case
+    // further down). Splitting it into a separate initial block instead
+    // hit ZEN-6033 (LRM 9.2.2.4: a variable written by an always_ff
+    // procedure and by another process of the same instance, with
+    // overlapping static prefixes, is forbidden) -- the exact same bug
+    // class as M1's sync_mem.sv fix, just via a different code path.
+    logic [31:0] preload1_mem [0:(PRELOAD1_WORDS > 0 ? PRELOAD1_WORDS : 1) - 1];
+    logic [31:0] preload2_mem [0:(PRELOAD2_WORDS > 0 ? PRELOAD2_WORDS : 1) - 1];
+    initial begin
+        if (PRELOAD1_FILE != "" && PRELOAD1_WORDS > 0) $readmemh(PRELOAD1_FILE, preload1_mem);
+        if (PRELOAD2_FILE != "" && PRELOAD2_WORDS > 0) $readmemh(PRELOAD2_FILE, preload2_mem);
+    end
+
     integer i;
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -88,6 +124,21 @@ module sdram_model #(
             saw_read_before_activate_error <= 1'b0;
             saw_write_before_activate_error <= 1'b0;
             for (i = 0; i < CAS_LATENCY; i = i + 1) read_valid_pipe[i] <= 1'b0;
+
+            if (PRELOAD1_FILE != "" && PRELOAD1_WORDS > 0) begin
+                for (int w = 0; w < PRELOAD1_WORDS; w++) begin
+                    automatic logic [24:0] word_addr = PRELOAD1_BYTE_BASE[26:2] + 25'(w);
+                    mem_store[pack_key(word_addr[24:23], word_addr[22:10], word_addr[9:0])] = preload1_mem[w];
+                end
+                $display("sdram_model: preloaded %0d words from %s at byte base 0x%08h", PRELOAD1_WORDS, PRELOAD1_FILE, PRELOAD1_BYTE_BASE);
+            end
+            if (PRELOAD2_FILE != "" && PRELOAD2_WORDS > 0) begin
+                for (int w = 0; w < PRELOAD2_WORDS; w++) begin
+                    automatic logic [24:0] word_addr = PRELOAD2_BYTE_BASE[26:2] + 25'(w);
+                    mem_store[pack_key(word_addr[24:23], word_addr[22:10], word_addr[9:0])] = preload2_mem[w];
+                end
+                $display("sdram_model: preloaded %0d words from %s at byte base 0x%08h", PRELOAD2_WORDS, PRELOAD2_FILE, PRELOAD2_BYTE_BASE);
+            end
         end else begin
             // shift the read-data pipeline every cycle (indices 0..CAS_LATENCY-1)
             for (i = 0; i < CAS_LATENCY - 1; i = i + 1) begin

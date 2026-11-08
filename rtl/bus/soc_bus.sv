@@ -4,7 +4,13 @@
 // connects to the fb_* pins exposed here, from a sibling instantiation at
 // the next level up, e.g. an end-to-end testbench or the future
 // rtl/board/de2_115_top.sv).
-module soc_bus (
+module soc_bus #(
+    // Overridable so different testbenches can load different boot ROM
+    // content without each one needing its own copy of this module.
+    // Defaults to the shared M3/M4 boot ROM image used by every test that
+    // doesn't override it.
+    parameter string BOOT_ROM_FILE = "sim/models/soc_rom.hex"
+) (
     input  logic        clk,
     input  logic        rst_n,
 
@@ -87,7 +93,7 @@ module soc_bus (
     logic [31:0] rom_rdata, bram_rdata;
     logic        rom_ready, bram_ready;
 
-    sync_mem #(.WORDS(16384), .INIT_FILE("sim/models/soc_rom.hex")) u_rom (
+    sync_mem #(.WORDS(16384), .INIT_FILE(BOOT_ROM_FILE)) u_rom (
         .clk(clk), .rst_n(rst_n),
         .mem_addr(cpu_mem_addr - ROM_BASE),
         .mem_wdata(cpu_mem_wdata),
