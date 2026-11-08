@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-08T02:33:39.067894+00:00",
+    "modified": "2026-11-08T02:40:50.261758+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -190,6 +190,16 @@
     },
     {
       "path": "sim/models/m5_exec/wad_directory.hex",
+      "role": "mem",
+      "library": "work"
+    },
+    {
+      "path": "sim/tb/m5_wad_preload_check_tb.sv",
+      "role": "simulation",
+      "library": "work"
+    },
+    {
+      "path": "sim/models/m5_exec/wad_check_prog.hex",
       "role": "mem",
       "library": "work"
     }

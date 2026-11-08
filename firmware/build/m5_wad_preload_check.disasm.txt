@@ -1,0 +1,62 @@
+
+/home/marivera/Documents/aiuC_proj/firmware/build/m5_wad_preload_check.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+10000000 <_start>:
+10000000:	02000117          	auipc	sp,0x2000
+10000004:	00010113          	mv	sp,sp
+10000008:	00000297          	auipc	t0,0x0
+1000000c:	0b428293          	addi	t0,t0,180 # 100000bc <__bss_end>
+10000010:	00000317          	auipc	t1,0x0
+10000014:	0ac30313          	addi	t1,t1,172 # 100000bc <__bss_end>
+
+10000018 <clear_bss_loop>:
+10000018:	0062d863          	bge	t0,t1,10000028 <clear_bss_done>
+1000001c:	0002a023          	sw	zero,0(t0)
+10000020:	00428293          	addi	t0,t0,4
+10000024:	ff5ff06f          	j	10000018 <clear_bss_loop>
+
+10000028 <clear_bss_done>:
+10000028:	00000097          	auipc	ra,0x0
+1000002c:	010080e7          	jalr	16(ra) # 10000038 <main>
+10000030:	00000073          	ecall
+
+10000034 <halt_spin>:
+10000034:	0000006f          	j	10000034 <halt_spin>
+
+10000038 <main>:
+10000038:	140005b7          	lui	a1,0x14000
+1000003c:	0005a783          	lw	a5,0(a1) # 14000000 <_stack_top+0x2000000>
+10000040:	0045a703          	lw	a4,4(a1)
+10000044:	00458613          	addi	a2,a1,4
+10000048:	0085a683          	lw	a3,8(a1)
+1000004c:	00b685b3          	add	a1,a3,a1
+10000050:	0005a503          	lw	a0,0(a1)
+10000054:	00c68633          	add	a2,a3,a2
+10000058:	00062583          	lw	a1,0(a2)
+1000005c:	bbbeb637          	lui	a2,0xbbbeb
+10000060:	8b760613          	addi	a2,a2,-1865 # bbbea8b7 <_stack_top+0xa9bea8b7>
+10000064:	00c787b3          	add	a5,a5,a2
+10000068:	0017b793          	seqz	a5,a5
+1000006c:	ba570713          	addi	a4,a4,-1115
+10000070:	80070713          	addi	a4,a4,-2048
+10000074:	00173713          	seqz	a4,a4
+10000078:	00e7f7b3          	and	a5,a5,a4
+1000007c:	00200713          	li	a4,2
+10000080:	02078663          	beqz	a5,100000ac <main+0x74>
+10000084:	00b03733          	snez	a4,a1
+10000088:	00d53533          	sltu	a0,a0,a3
+1000008c:	00a77733          	and	a4,a4,a0
+10000090:	fe4967b7          	lui	a5,0xfe496
+10000094:	4ec78793          	addi	a5,a5,1260 # fe4964ec <_stack_top+0xec4964ec>
+10000098:	00f687b3          	add	a5,a3,a5
+1000009c:	0017b793          	seqz	a5,a5
+100000a0:	00e7f7b3          	and	a5,a5,a4
+100000a4:	00200713          	li	a4,2
+100000a8:	40f70733          	sub	a4,a4,a5
+100000ac:	200007b7          	lui	a5,0x20000
+100000b0:	00e7a623          	sw	a4,12(a5) # 2000000c <_stack_top+0xe00000c>
+100000b4:	00000073          	ecall
+100000b8:	0000006f          	j	100000b8 <main+0x80>
