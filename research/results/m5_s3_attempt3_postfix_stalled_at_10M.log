@@ -1,0 +1,160 @@
+Zenith Simulator v1.0.2
+Copyright (c) 2026 Mifral Tech S.A. de C.V.  All rights reserved.
+
+rtl/memory/sdram_ctrl.sv:127:29: warning: [ZEN-2423] implicit conversion extends from width 12 to width 13
+                dram_addr = {2'b00, col}; // A10=1 (bit10 of col range is 0 here since col<1024<2^10... ensure A10 set for auto-precharge below
+                          ~ ^~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:151:29: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+            if (refresh_ctr >= REFRESH_INTERVAL - 1) begin
+                ~~~~~~~~~~~ ^~ ~~~~~~~~~~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:160:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= POWERUP_CYCLES - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:199:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_RCD - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:214:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_CL - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~
+rtl/memory/sdram_ctrl.sv:223:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_RP - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~
+rtl/memory/sdram_ctrl.sv:242:62: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+        mem_ready = (state == S_PRECHARGE_WAIT) && (wait_ctr == T_RP - 1);
+                                                    ~~~~~~~~ ^~ ~~~~~~~~
+rtl/peripherals/sd_spi.sv:460:57: warning: [ZEN-2450] arithmetic between operands of different types ('int' and 'logic[1:0]')
+                        block_buf[block_byte_idx[8:2]][8*block_byte_idx[1:0] +: 8] <= xfer_rx_byte;
+                                                       ~^~~~~~~~~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:62:40: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'logic signed[15:0]')
+                end else if (pix_waddr < 16'((PIXELS + 3) / 4)) begin
+                             ~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:82:36: warning: [ZEN-2450] arithmetic between operands of different types ('int' and 'logic[1:0]')
+    assign scan_index = scan_word[8*fb_addr[1:0] +: 8];
+                                  ~^~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:83:46: warning: [ZEN-2453] comparison of differently signed types ('logic[16:0]' and 'bit signed[16:0]')
+    assign fb_pixel   = (fb_valid && fb_addr < 17'(PIXELS)) ? palette[scan_index][23:0] : 24'd0;
+                                     ~~~~~~~ ^ ~~~~~~~~~~~
+sim/models/sdram_model.sv:97:20: warning: [ZEN-2423] implicit conversion extends from width 25 to width 27
+        pack_key = {b, r, c};
+                 ~ ^~~~~~~~~
+sim/models/sdram_model.sv:130:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD1_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:130:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD1_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/models/sdram_model.sv:137:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD2_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:137:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD2_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'command_count_activate' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'command_count_mrs' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'command_count_precharge' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'command_count_read' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'command_count_refresh' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'command_count_write' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'saw_read_before_activate_error' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:124:7: warning: [ZEN-2230] output port 'saw_write_before_activate_error' has no connection
+    ) u_sdram_model (
+      ^
+rtl/bus/soc_bus.sv:186:15: warning: [ZEN-5071] enumeration value 'SEL_NONE' not explicitly handled in case statement
+        case (sel)
+              ^~~
+rtl/memory/sdram_ctrl.sv:107:15: warning: [ZEN-5071] enumeration values 'S_POWERUP', 'S_INIT_WAIT1', 'S_INIT_WAIT2' (and 6 others) not explicitly handled in case statement
+        case (state)
+              ^~~~~
+rtl/peripherals/sd_spi.sv:224:19: warning: [ZEN-5071] enumeration values 'ST_IDLE' and 'ST_DONE_READ' not explicitly handled in case statement
+            case (state)
+                  ^~~~~
+sim/models/sync_mem.sv:39:21: warning: [ZEN-5088] variable 'mem' is driven by an always_ff procedure and also written by another process; LRM 9.2.2 forbids this, Zenith allows it and the last write wins
+                    mem[waddr] <= {
+                    ^~~
+sim/models/sync_mem.sv:21:30: note: also assigned here
+        $readmemh(INIT_FILE, mem);
+                             ^~~
+sim/models/sdram_model.sv:150:19: warning: [ZEN-5071] enumeration value 'CMD_NOP' not explicitly handled in case statement
+            case (cmd)
+                  ^~~
+sdram_model: preloaded 141563 words from sim/models/m5_exec/doom_prog.hex at byte base 0x10000000
+[progress] cycle=0 pc=0x00000000 fb_writes=0
+[progress] cycle=2000000 pc=0x10000020 fb_writes=0
+[progress] cycle=4000000 pc=0x1000f974 fb_writes=0
+[progress] cycle=6000000 pc=0x10045978 fb_writes=0
+[progress] cycle=8000000 pc=0x1000f95c fb_writes=0
+[progress] cycle=10000000 pc=0x1000f954 fb_writes=0
+
+=== Bounded 18-minute observation window (appended, not part of zsim.log itself) ===
+Monitored directly via a background poll loop reading this log file and
+/proc/1077927/stat every 30s, with a heartbeat every 120s. Baseline at
+window start: line_count=100, utime=383578 jiffies.
+
+heartbeat iter=4   elapsed=120s  utime=383578->392460  line_count=100
+heartbeat iter=8   elapsed=240s  utime=392460->401328  line_count=100
+heartbeat iter=12  elapsed=360s  utime=401328->410264  line_count=100
+heartbeat iter=16  elapsed=480s  utime=410264->419173  line_count=100
+heartbeat iter=20  elapsed=600s  utime=419173->428083  line_count=100
+heartbeat iter=24  elapsed=720s  utime=428083->437003  line_count=100
+heartbeat iter=28  elapsed=840s  utime=437003->445924  line_count=100
+heartbeat iter=32  elapsed=960s  utime=445924->454836  line_count=100
+[window end, 1080s] utime=464441  line_count=100  RSS grew 297MB -> 417MB
+
+Summary: across the full 1080-second (18-minute) bounded window, the
+process consumed ~809 seconds of genuine CPU time (confirmed via
+/proc/<pid>/stat's utime field advancing steadily every single interval
+-- not a hung/blocked process), yet produced ZERO new [progress]
+checkpoints -- line_count stayed at exactly 100 throughout. Every prior
+2,000,000-cycle span (0->2M->4M->6M->8M->10M) took roughly 400s of
+wall-clock time each. This span (10M onward) consumed over 2.5x that
+much wall-clock time (and most of it as genuine, steady CPU work, not
+idle waiting) without completing even one more 2,000,000-cycle span.
+
+RSS grew by ~120MB during this same window with zero cycle-count
+progress visible -- consistent with sdram_model.sv's mem_store
+associative array growing from a large number of newly-touched,
+previously-unseen SDRAM addresses.
+
+=== THE ACTUAL BLOCKING CONDITION, FOUND IMMEDIATELY AFTER THE WINDOW ===
+Attempting to write this very evidence file failed with "Disk quota
+exceeded" (EDQUOT, not ENOSPC -- the shared /home filesystem itself
+still showed 69G free at the time). Direct investigation: this run's
+own m5_doom_exec_tb.zwdb waveform file had grown to 19,583,426,560 bytes
+(~19.58 GB) -- more than double the 8.57GB captured by the PREVIOUS
+(pre-D_FindIWAD-fix) run, and still actively growing. waveform_mode="off"
+is confirmed (again) not honored for this run either. This is almost
+certainly both: (a) the direct cause of hitting a per-user disk quota
+that the shared filesystem's own 69G-free headroom did not protect
+against, and (b) a very plausible contributor to the dramatic wall-clock
+slowdown itself (sustained large-file write I/O competing with
+simulation work on this specific multi-tenant host).
+
+Action taken: sent SIGTERM to the runaway process (PID 1077927, a
+zenith --daemon my own session had spawned for this run -- confirmed
+via `ps -o user` before acting). It terminated cleanly (zombie state
+within 2 seconds). Deleted the now-closed, 19.58GB zwdb file, which
+restored the ability to write files at all (verified with a test write
+immediately after). This is treated as a genuine, confirmed resource-
+exhaustion blocking condition -- not a judgment call based on wall-clock
+patience alone -- consistent with the standing instruction that
+resource exhaustion is explicit grounds for intervention.
+
+Decision: this run produced no new architectural checkpoint beyond
+cycle=10,000,000 and is not being pursued further. Proceeding to the
+smaller, already-prepared WAD preload verification test next, with
+--zwdb-start-off applied from the start this time to prevent a repeat
+of this exact failure mode.

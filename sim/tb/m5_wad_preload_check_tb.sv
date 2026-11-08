@@ -55,7 +55,7 @@ module m5_wad_preload_check_tb;
 
     sdram_model #(
         .PRELOAD1_FILE("sim/models/m5_exec/wad_check_prog.hex"),
-        .PRELOAD1_WORDS(47),
+        .PRELOAD1_WORDS(64),
         .PRELOAD1_BYTE_BASE(32'h1000_0000),
         .PRELOAD2_FILE("sim/models/m5_exec/wad_header.hex"),
         .PRELOAD2_WORDS(3),
@@ -77,11 +77,14 @@ module m5_wad_preload_check_tb;
         if (rst_n) begin
             cycle_count <= cycle_count + 1;
             if (halted) begin
-                if (ledr == 18'h1) begin
+                // bit0=ident_ok bit1=numlumps_ok bit2=infotableofs_ok
+                // bit3=dir_filepos_ok bit4=dir_name_ok bit5=all_pass
+                if (ledr[5]) begin
                     $display("[PASS] WAD header+directory readable via the real memory path, cycle=%0d, pc=0x%08h", cycle_count, pc_out);
                     $display("M5_WAD_PRELOAD_CHECK_RESULT: PASS");
                 end else begin
-                    $display("[FAIL] WAD preload/addressing check failed (ledr=0x%05h), cycle=%0d, pc=0x%08h", ledr, cycle_count, pc_out);
+                    $display("[FAIL] WAD preload/addressing check failed, flags=0x%02h (ident=%0b numlumps=%0b infotableofs=%0b dir_filepos=%0b dir_name=%0b), cycle=%0d, pc=0x%08h",
+                             ledr, ledr[0], ledr[1], ledr[2], ledr[3], ledr[4], cycle_count, pc_out);
                     $display("M5_WAD_PRELOAD_CHECK_RESULT: FAIL");
                 end
                 $finish;
