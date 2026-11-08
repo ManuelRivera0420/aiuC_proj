@@ -163,3 +163,33 @@ Action: terminating this process now (SIGTERM) as a controlled
 termination after fully preserving this evidence, per explicit
 instruction not to extend the observation indefinitely once no further
 architectural progress can be demonstrated.
+
+=== FOLLOW-UP: the GUI showed a 30-minute wall-clock cancellation; MCP and the OS process did not ===
+
+The human operator, observing the Animas GUI directly, reported it showing:
+
+  [progress] cycle=24500000 pc=0x10039bc0 fb_writes=0
+  [progress] cycle=25000000 pc=0x100392a4 fb_writes=0
+  Wall-clock cap (30 min) reached -- simulation cancelled.
+  -- Cancelled by user
+
+This cancellation was NOT visible through any channel available to this
+session: get_last_sim_result kept reporting finished=false with an
+unchanged log_line_count, and the underlying OS process (zenith --daemon
+--port 39279) remained alive and genuinely, continuously consuming CPU
+(/proc/<pid>/stat utime advancing every single check, no wchan block)
+for over 42 minutes after the GUI's own cancellation point. This is a
+real, reproducible Animas job-lifecycle discrepancy: a job the GUI
+considers cancelled can leave its underlying Zenith subprocess running
+and producing real simulated-time progress, orphaned/detached from the
+GUI's own bookkeeping, with nothing exposed through the MCP interface
+(get_last_sim_result, read_simulation_log) to reveal the GUI-side
+cancellation. Terminated the process directly (kill -TERM, confirmed
+owner/identity first) once the human operator's direct GUI observation
+established the authoritative cancellation state.
+
+This matches and extends the earlier "silent stop" observability
+limitation documented above: there, no termination signal was visible
+anywhere (GUI or MCP); here, the GUI had one but MCP/OS-process state
+still didn't, which is an even more specific instance of the same class
+of gap -- worth flagging to Animas's maintainers.
