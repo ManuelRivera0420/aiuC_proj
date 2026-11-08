@@ -272,6 +272,22 @@ With the WAD header+directory preloaded (`PRELOAD2`/`PRELOAD3`, already wired in
 
 This is the first run in this project to demonstrably execute inside `W_AddFile` itself — concrete, traced evidence that the WAD-access gate is now passable, not just theorized.
 
+### Confirmed with explicit, named checkpoints (not just post-hoc PC matching), on a fresh run under an unlimited wall-clock setting
+
+Human-operator-confirmed via direct Animas GUI observation: the previous run was in fact cancelled by a 30-minute wall-clock cap (the GUI showed `Wall-clock cap (30 min) reached — simulation cancelled.`), invisible to this session through the MCP interface or OS-level process state (documented as its own job-lifecycle discrepancy finding in `research/results/m5_s3_attempt4_wad_preload_stuck_at_24M.log`). The operator disabled this cap and authorized a fresh run.
+
+That fresh run reproduced the prior run's trajectory deterministically through cycle 24,000,000 (identical PCs at every checkpoint), then — now with the previously-buggy milestone flags fixed (see above) — produced explicit, named confirmations for the first time:
+
+```
+[MILESTONE] D_FindIWAD reached, cycle=11299768
+[MILESTONE] W_AddFile reached (D_FindIWAD returned non-NULL), cycle=11324822
+[MILESTONE] D_IdentifyVersion reached (WAD header+directory read without a fatal error), cycle=20517472
+```
+
+The gap between `D_FindIWAD` and `W_AddFile` (25,054 cycles) directly confirms the `--wrap=D_FindIWAD` fix returns promptly and execution proceeds into the real WAD-loading function. The `D_IdentifyVersion` milestone is the strongest evidence yet: it is only reachable if `W_AddFile` completed **without** hitting `I_Error` — i.e., the preloaded WAD header and lump directory passed real validation against real data, not a placeholder.
+
+The run then continued, monitored continuously (`utime`-delta and `wchan` checked every heartbeat), **past the previous 30-minute cap point with no cap this time** — confirmed empirically by watching it cross that wall-clock threshold live (cycle 24,000,000 → 25,500,000 → 28,000,000 → 31,500,000, each a new high-water mark, none matching the previous run's stopping point). This stands as working confirmation of the unlimited-wall-clock setting, obtained by observing the run actually survive past the threshold rather than assuming the setting change was sufficient on its own.
+
 ### A genuine Animas/Zenith observability limitation: "OS process alive" is not "simulation progressing"
 
 The run above eventually stopped producing new `[progress]` checkpoints past cycle 24,000,000. Across three successive bounded observation windows (~44 minutes total), `ps` kept showing the process `R+`/alive with a climbing cumulative `%cpu` average — signals that, on their own, are consistent with either "still computing slowly" or "idle." Direct investigation (not assumed) distinguished the two: `/proc/<pid>/stat`'s `utime` field showed **zero new CPU ticks** across a fresh 3-second check (every earlier check that session had shown ticks advancing), `ps -o wchan` showed the process blocked in `inet_csk_accept` — the daemon's own idle network-listener loop, not simulation code — and `zsim.log`'s mtime was **1 hour 41 minutes stale**. `RSS` had also dropped from ~431MB to 98MB, consistent with the simulation's own working set having been torn down. No `$finish`, `[RESULT]` line, or error was ever printed; the run had simply stopped producing simulated time at some point, silently, with no MCP-exposed signal distinguishing this from "still running." Full evidence: `research/results/m5_s3_attempt4_wad_preload_stuck_at_24M.log`.
