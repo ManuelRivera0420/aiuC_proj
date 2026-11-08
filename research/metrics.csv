@@ -23,3 +23,8 @@ utc_ts,milestone,metric,value,unit
 2026-11-08T01:40:00Z,M4,e2e_checks_passed,7,count
 2026-11-08T01:40:00Z,M4,e2e_finish_time_ns,9040016,ns
 2026-11-08T01:40:00Z,M4,e2e_halt_pc,0x10000030,address
+2026-11-08T02:40:00Z,M5,doom_source_files_compiled,86,count
+2026-11-08T02:40:00Z,M5,doom_binary_size_bytes,810874,bytes
+2026-11-08T02:40:00Z,M5,doom_text_bytes,504420,bytes
+2026-11-08T02:40:00Z,M5,doom_unsupported_instruction_hits,0,count
+2026-11-08T02:40:00Z,M5,doom_build_iterations_to_clean_link,3,count

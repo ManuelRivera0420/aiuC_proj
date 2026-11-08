@@ -1,0 +1,30 @@
+scripts/build_doom.sh output (full DoomGeneric compile+link for RV32IM/ILP32):
+
+=== 86 source files ===
+=== compiled 86 / 86, 0 failures ===
+=== attempting link ===
+LINK OK
+   text	   data	    bss	    dec	    hex	filename
+ 504420	  61810	 244644	 810874	  c5f7a	firmware/build/doom/doom.elf
+
+Static ISA/ABI gate (readelf -A):
+Attribute Section: riscv
+File Attributes
+  Tag_RISCV_stack_align: 16-bytes
+  Tag_RISCV_arch: "rv32i2p1_m2p0_zmmul1p0"
+
+Disassembly grep for F/D/A/V/compressed/CSR/AMO/LR/SC mnemonics across the
+entire 792,874-byte binary: 0 matches.
+
+ELF header flags: 0x0 (no RVC/compressed bit set).
+
+Key symbols (riscv64-unknown-elf-nm):
+10000000 T _start
+1003a9b8 T main
+10004564 T D_DoomMain
+10005ab4 T doomgeneric_Create
+100c5f80 B __heap_start
+12000000 B _stack_top
+(heap window: ~31.1MB, after enlarging firmware/linker/de2_115_soc.ld's
+SDRAM region from 1MB to 32MB -- DoomGeneric's Z_Malloc zone allocator
+needs real headroom, unlike M4's tiny test program)

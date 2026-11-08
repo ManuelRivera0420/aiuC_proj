@@ -55,10 +55,17 @@ Every PASS claim below links to a reproducible artifact. "Reproducible" means: r
 | The SD/SPI byte-order fix (M3→M4) is correct, not just reasoned through | `research/results/m4_sd_spi_tb_recheck.log`: 9/9 PASS with corrected values `0x18110a03`/`0x342d261f` | Animas MCP: `set_sim_top(sim/tb/sd_spi_tb.sv)` → `run_simulation` |
 | Animas/Zenith does not write simulation artifacts to `/tmp` for this project | Before/after snapshot of `/tmp`'s top-level contents+mtimes across a full simulation run showed zero diff; `lsof` on the running daemon/backend processes showed no open `/tmp` files | `find /tmp -maxdepth 1 -printf '%T@ %p\n' \| sort -n` before and after a `run_simulation` call, diff the two |
 
+## M5 — DoomGeneric real compile (S0-S2 software gates)
+
+| Claim | Evidence | How to reproduce |
+|---|---|---|
+| The real, complete DoomGeneric engine (86 compilation units) compiles and links cleanly for RV32IM/ILP32, using only instructions `cpu_core.sv` implements | `research/results/m5_doom_compile_link_isa_gate.log`: 86/86 compiled, link OK, `readelf -A` shows `rv32i2p1_m2p0_zmmul1p0` only, 0 hits for any F/D/A/V/CSR/AMO/compressed mnemonic across the full 792,874-byte binary | `bash scripts/build_doom.sh` |
+| The pixel-format and palette-update design decisions required zero patches to upstream DoomGeneric | `software/doom_port/doomgeneric_de2115.c` and `w_file_de2115.c` only add new files; `git diff` against `software/upstream/doomgeneric/` is empty | `diff -r software/upstream/doomgeneric/ <(git show HEAD:software/upstream/doomgeneric/)` (or just inspect: no files under `software/upstream/` were modified after the initial vendoring commit) |
+
 ## What is explicitly NOT claimed yet
 
+- The compiled DOOM binary has NOT been executed on `cpu_core` via Animas — compiling and linking cleanly is S0-S2, not S3/S4. The measured reason (SD-transfer time for an 800KB+ payload) and the concrete next step (a direct-SDRAM-preload fast-path testbench) are in `docs/verification_report.md`'s M5 section and `PROJECT_STATE.md`.
 - No physical SD card write has been performed by this project — `docs/sd_card_preparation.md` is instructions for the human team, not a completed action.
-- No real DoomGeneric/Freedoom source has been fetched or ported yet — that's M5.
 - No Quartus project files (`.qpf`/`.qsf`/`.sdc`) or `rtl/board/de2_115_top.sv` exist yet — that's M6.
 - No SDRAM, SD/SPI, VGA, or GPIO peripheral RTL exists yet.
 - No DoomGeneric source has been fetched or inspected yet.

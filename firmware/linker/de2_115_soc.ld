@@ -13,7 +13,13 @@
 
 MEMORY
 {
-    SDRAM (rwx) : ORIGIN = 0x10000000, LENGTH = 1M   /* 1 MiB window for this test program; full 128MB available */
+    /* 32MiB window: M4's tiny test program only needed 1MiB, but DoomGeneric's
+       Z_Malloc zone allocator wants several MB of real heap headroom once
+       a WAD is loaded (see docs/verification_report.md's M5 section) --
+       32MiB leaves ample room while staying well inside the real 128MB
+       SDRAM total, reserving the rest for a future WAD-in-SDRAM region
+       (software/doom_port/w_file_de2115.c's WAD_SDRAM_BASE). */
+    SDRAM (rwx) : ORIGIN = 0x10000000, LENGTH = 32M
 }
 
 ENTRY(_start)
