@@ -7,6 +7,15 @@
 # i_*music*.c/net_*.c (SDL/X11/Windows/network -- out of scope) and the
 # host w_file_stdc.c (replaced by software/doom_port/w_file_de2115.c,
 # which exports the same `stdc_wad_file` symbol w_file.c expects).
+#
+# Also links with -Wl,--wrap=D_FindIWAD: upstream D_FindIWAD() can never
+# succeed on a filesystem-less target (both its code paths depend on a
+# working fopen()/stat(), which this target doesn't have), so without
+# this it always fails before ever reaching w_file_de2115.c -- found via
+# M5 S3 direct execution, see docs/verification_report.md and
+# software/doom_port/d_find_iwad_de2115.c's own header for the full
+# story. Zero upstream patches: this is a linker-level symbol
+# redirection, not a source change to d_iwad.c/d_main.c.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,6 +41,7 @@ EXCLUDE_PATTERN='doomgeneric_allegro|doomgeneric_emscripten|doomgeneric_linuxvt|
 
 mapfile -t SOURCES < <(find "$DG_SRC" -maxdepth 1 -name '*.c' | grep -vE "$EXCLUDE_PATTERN" | sort)
 SOURCES+=("$PORT_SRC/doomgeneric_de2115.c" "$PORT_SRC/w_file_de2115.c" "$PORT_SRC/main_de2115.c")
+SOURCES+=("$PORT_SRC/d_find_iwad_de2115.c")
 SOURCES+=("$REPO_ROOT/firmware/platform/syscalls.c")
 SOURCES+=("$REPO_ROOT/firmware/startup/crt0.S")
 
@@ -67,6 +77,7 @@ if [ "$FAILED" -eq 0 ]; then
     riscv64-unknown-elf-gcc $CFLAGS -nostdlib \
         -T "$REPO_ROOT/firmware/linker/de2_115_soc.ld" \
         -Wl,--defsym=__heap_start_doom=0 \
+        -Wl,--wrap=D_FindIWAD \
         -o "$BUILD_DIR/doom.elf" "${OBJS[@]}" -lm -lc -lgcc 2>"$BUILD_DIR/link.err.txt"
     LINK_STATUS=$?
     if [ "$LINK_STATUS" -eq 0 ]; then

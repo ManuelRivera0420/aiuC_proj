@@ -117,7 +117,7 @@ module m5_doom_exec_tb;
 
     sdram_model #(
         .PRELOAD1_FILE("sim/models/m5_exec/doom_prog.hex"),
-        .PRELOAD1_WORDS(141559),
+        .PRELOAD1_WORDS(141563), // rebuilt after adding __wrap_D_FindIWAD; 4 words larger
         .PRELOAD1_BYTE_BASE(32'h1000_0000)
         // PRELOAD2 (freedoom1.wad) deliberately left at its default
         // (disabled) -- see this file's header comment for why.
