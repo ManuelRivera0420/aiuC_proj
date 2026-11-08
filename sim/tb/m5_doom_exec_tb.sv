@@ -297,7 +297,14 @@ module m5_doom_exec_tb;
             end
             if (!seen_ierror && pc_out == ADDR_I_ERROR) begin
                 seen_ierror <= 1'b1;
-                $display("[MILESTONE] I_Error reached -- a fatal DOOM engine error path was taken, cycle=%0d", cycle_count);
+                // a0 (x10) holds I_Error(char *error, ...)'s first arg --
+                // the format-string pointer. Every I_Error call site in
+                // the DOOM source passes a literal C string constant, so
+                // this address can be looked up directly in doom.elf's
+                // .rodata to identify exactly which call fired, without
+                // needing any UART/console capture mechanism.
+                $display("[MILESTONE] I_Error reached -- a fatal DOOM engine error path was taken, cycle=%0d, a0(fmt_str_ptr)=0x%08h",
+                          cycle_count, dut_cpu.u_regfile.regs[10]);
             end
 
             if (mem_valid && mem_ready && (|mem_wstrb) &&
