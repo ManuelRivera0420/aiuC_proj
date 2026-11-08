@@ -1,0 +1,165 @@
+Zenith Simulator v1.0.2
+Copyright (c) 2026 Mifral Tech S.A. de C.V.  All rights reserved.
+
+rtl/memory/sdram_ctrl.sv:127:29: warning: [ZEN-2423] implicit conversion extends from width 12 to width 13
+                dram_addr = {2'b00, col}; // A10=1 (bit10 of col range is 0 here since col<1024<2^10... ensure A10 set for auto-precharge below
+                          ~ ^~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:151:29: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+            if (refresh_ctr >= REFRESH_INTERVAL - 1) begin
+                ~~~~~~~~~~~ ^~ ~~~~~~~~~~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:160:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= POWERUP_CYCLES - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:199:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_RCD - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:214:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_CL - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~
+rtl/memory/sdram_ctrl.sv:223:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_RP - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~
+rtl/memory/sdram_ctrl.sv:242:62: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+        mem_ready = (state == S_PRECHARGE_WAIT) && (wait_ctr == T_RP - 1);
+                                                    ~~~~~~~~ ^~ ~~~~~~~~
+rtl/peripherals/sd_spi.sv:460:57: warning: [ZEN-2450] arithmetic between operands of different types ('int' and 'logic[1:0]')
+                        block_buf[block_byte_idx[8:2]][8*block_byte_idx[1:0] +: 8] <= xfer_rx_byte;
+                                                       ~^~~~~~~~~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:62:40: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'logic signed[15:0]')
+                end else if (pix_waddr < 16'((PIXELS + 3) / 4)) begin
+                             ~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:82:36: warning: [ZEN-2450] arithmetic between operands of different types ('int' and 'logic[1:0]')
+    assign scan_index = scan_word[8*fb_addr[1:0] +: 8];
+                                  ~^~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:83:46: warning: [ZEN-2453] comparison of differently signed types ('logic[16:0]' and 'bit signed[16:0]')
+    assign fb_pixel   = (fb_valid && fb_addr < 17'(PIXELS)) ? palette[scan_index][23:0] : 24'd0;
+                                     ~~~~~~~ ^ ~~~~~~~~~~~
+sim/models/sdram_model.sv:106:20: warning: [ZEN-2423] implicit conversion extends from width 25 to width 27
+        pack_key = {b, r, c};
+                 ~ ^~~~~~~~~
+sim/models/sdram_model.sv:141:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD1_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:141:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD1_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/models/sdram_model.sv:148:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD2_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:148:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD2_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/models/sdram_model.sv:155:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD3_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:155:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD3_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_activate' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_mrs' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_precharge' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_read' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_refresh' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_write' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'saw_read_before_activate_error' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'saw_write_before_activate_error' has no connection
+    ) u_sdram_model (
+      ^
+rtl/bus/soc_bus.sv:186:15: warning: [ZEN-5071] enumeration value 'SEL_NONE' not explicitly handled in case statement
+        case (sel)
+              ^~~
+rtl/memory/sdram_ctrl.sv:107:15: warning: [ZEN-5071] enumeration values 'S_POWERUP', 'S_INIT_WAIT1', 'S_INIT_WAIT2' (and 6 others) not explicitly handled in case statement
+        case (state)
+              ^~~~~
+rtl/peripherals/sd_spi.sv:224:19: warning: [ZEN-5071] enumeration values 'ST_IDLE' and 'ST_DONE_READ' not explicitly handled in case statement
+            case (state)
+                  ^~~~~
+sim/models/sync_mem.sv:39:21: warning: [ZEN-5088] variable 'mem' is driven by an always_ff procedure and also written by another process; LRM 9.2.2 forbids this, Zenith allows it and the last write wins
+                    mem[waddr] <= {
+                    ^~~
+sim/models/sync_mem.sv:21:30: note: also assigned here
+        $readmemh(INIT_FILE, mem);
+                             ^~~
+sim/models/sdram_model.sv:168:19: warning: [ZEN-5071] enumeration value 'CMD_NOP' not explicitly handled in case statement
+            case (cmd)
+                  ^~~
+sdram_model: preloaded 141563 words from sim/models/m5_exec/doom_prog.hex at byte base 0x10000000
+sdram_model: preloaded 3 words from sim/models/m5_exec/wad_header.hex at byte base 0x14000000
+sdram_model: preloaded 12652 words from sim/models/m5_exec/wad_directory.hex at byte base 0x15b69b14
+[progress] cycle=0 pc=0x00000000 fb_writes=0
+[progress] cycle=2000000 pc=0x10000020 fb_writes=0
+[progress] cycle=4000000 pc=0x1000f974 fb_writes=0
+[progress] cycle=6000000 pc=0x10045978 fb_writes=0
+[progress] cycle=8000000 pc=0x1000f95c fb_writes=0
+[progress] cycle=10000000 pc=0x1000f954 fb_writes=0
+[progress] cycle=12000000 pc=0x10045620 fb_writes=0
+[progress] cycle=14000000 pc=0x10044128 fb_writes=0
+[progress] cycle=16000000 pc=0x100395b8 fb_writes=0
+[progress] cycle=18000000 pc=0x10043ffc fb_writes=0
+[progress] cycle=20000000 pc=0x1004403c fb_writes=0
+[progress] cycle=22000000 pc=0x10044038 fb_writes=0
+[progress] cycle=24000000 pc=0x10039280 fb_writes=0
+
+=== DEFINITIVE FINDING: the process was no longer actually simulating, well before this was detected ===
+
+Checked directly rather than trusting "process alive" as proof of
+ongoing simulation (per explicit instruction to distinguish Animas
+UI/tool-response state from actual Zenith process activity):
+
+  $ cat /proc/1154725/stat | awk '{print $14, $15}'   # utime, stime
+  utime: 396165 stime: 19463
+  $ sleep 3
+  $ cat /proc/1154725/stat | awk '{print $14, $15}'
+  utime: 396165 stime: 19463          <-- ZERO new CPU ticks in 3s
+
+  $ ps -o pid,stat,wchan:32 -p 1154725
+  1154725 S+   inet_csk_accept         <-- blocked waiting to ACCEPT
+                                           a new network connection,
+                                           i.e. the daemon's own idle
+                                           listener loop, NOT executing
+                                           simulation code
+
+  $ stat zsim.log -> mtime 22:12:47; current time 23:53:59
+  -> the log had not been written to in 1 HOUR 41 MINUTES, far beyond
+     any of the bounded observation windows checked individually.
+
+RSS had also dropped from ~431MB (observed earlier, mid-simulation) to
+98MB by this check -- consistent with the simulation's own working set
+having been torn down, not just "running slowly."
+
+CONCLUSION: this process was not "slow," it had genuinely stopped
+simulating at some point before any of the individual bounded
+observation windows could have caught it from CPU/etimes/%cpu alone --
+every one of those signals (R+/S+ state, climbing cumulative %cpu
+average, "alive" in ps) is consistent with EITHER "still computing" OR
+"idle daemon, alive, waiting for the next command," and cannot
+distinguish between them on its own. Only checking utime deltas AND
+wchan AND the log's actual mtime together gave an unambiguous answer.
+This is a genuine Animas/Zenith observability limitation for a
+long-running ui_remote_control job: there is no tool-level signal
+exposed through the MCP interface that says "the simulation itself
+stopped advancing," separate from "the OS process holding it is still
+alive." No $finish, no RESULT line, no error was ever printed -- the
+run simply stopped producing new simulated time at some point between
+the cycle=24,000,000 checkpoint and whenever the underlying work ended,
+with the daemon reverting to its idle accept() loop without any visible
+signal that this had happened.
+
+Action: terminating this process now (SIGTERM) as a controlled
+termination after fully preserving this evidence, per explicit
+instruction not to extend the observation indefinitely once no further
+architectural progress can be demonstrated.

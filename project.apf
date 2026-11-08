@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-08T03:39:00.298372+00:00",
+    "modified": "2026-11-08T03:44:16.144880+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -207,7 +207,7 @@
   "folders": [],
   "settings": {
     "top_module": "de2_115_top",
-    "sim_top": "sim/tb/m5_wad_preload_check_tb.sv",
+    "sim_top": "sim/tb/m5_doom_exec_tb.sv",
     "target_device": "",
     "sim_tool": "zenith",
     "synth_tool": "yosys",
