@@ -328,6 +328,42 @@ Confirmed via `get_last_sim_result` (`"finished": true, "finish_time": 600000005
 
 **Honest conclusion for this attempt**: engine initialization — now provably including real `D_FindIWAD`, `W_AddFile`, `D_IdentifyVersion`, and a full WAD-identity checksum pass over all 3,163 lumps — takes longer than 60,000,000 simulated cycles to reach the first framebuffer write (`fb_writes_seen=0` at the watchdog). This is not a failure of the RTL, the fix, or the preload strategy — every one of those is now demonstrated working, concretely, with named milestones. It is a genuine, now-quantified statement about how much simulated time DOOM's real startup sequence needs on this design, which the next session should budget for explicitly (a larger `WATCHDOG_CYCLES`, not further debugging) rather than treating as something to fix.
 
+### Attempt 6 (watchdog raised to 200,000,000): reaches `R_Init`, then a controlled fatal exit — not a hang
+
+With `WATCHDOG_CYCLES` raised to 200,000,000 (justified by the measured `W_Checksum` workload: 3,163 lumps × SHA1, ~1,038 `Transform()` calls), re-ran. The run reproduced every previously-confirmed milestone at identical cycle counts (`D_FindIWAD`=11,299,768, `W_AddFile`=11,324,822, `D_IdentifyVersion`=20,517,472 — fully deterministic given identical preloaded inputs), then reached two **new** milestones never seen before:
+
+```
+[MILESTONE] D_InitNetGame reached -- W_Checksum completed (all 3,163 real lumps hashed), cycle=80104015
+[MILESTONE] R_Init reached -- rendering subsystem initialization begins, cycle=80134964
+[RESULT] HALTED (ECALL/_exit reached) at pc=0x1003ab68, cycle=80186517, fb_writes_seen=0
+[sim] $finish at time 801865175 (exit code 0)
+```
+
+`W_ReadLump`'s milestone never fired. Root-caused by reading `software/doom_port/w_file_de2115.c:40` directly: `De2115_OpenFile` sets `wad_file_t.mapped = (byte *)WAD_SDRAM_BASE` unconditionally, so `w_wad.c`'s `W_CacheLumpNum` always takes the memory-mapped branch (`result = lump->wad_file->mapped + lump->position`) and never calls `W_ReadLump` — a deliberate, correct design for this target (the WAD lives directly in the CPU's address space, no real filesystem), not a bug. This means every lump-CONTENT access is a raw pointer dereference into `WAD_SDRAM_BASE + lump->position` — exactly the region this project has only ever preloaded the header (12 bytes) and directory (50,608 bytes) into, never lump content. Confirmed directly from `sim/models/sdram_model.sv:78/178-179` that `mem_store` is an associative array whose read path is `mem_store.exists(key) ? mem_store[key] : 32'd0` — any address never explicitly written reads back as a deterministic `32'd0`, not `X`. So every un-preloaded lump's content reads as zero.
+
+The halt is a controlled `ECALL`/`_exit` — i.e. the program itself called `exit()` — not a crash, hang, or illegal instruction. This is real, new evidence that the engine's `W_Checksum`/metadata path is fully correct; the open question became whether `R_Init` fails *because* real lump content is unavailable, or for some unrelated reason.
+
+### Attempt 7: fine-grained `R_Init*` sub-milestones narrow the halt to inside `R_InitTextures`
+
+Added one milestone per `R_InitData`'s four sub-inits (`R_InitTextures`, `R_InitFlats`, `R_InitSpriteLumps`, `R_InitColormaps`) plus `R_InitPointToAngle`/`R_InitSkyMap` (bracketing `R_InitData`'s return and `R_SetViewSize`/`R_InitPlanes`/`R_InitLightTables`'s return) and `I_Error`'s own entry (fires on any fatal DOOM error, regardless of message). Re-ran:
+
+```
+[MILESTONE] R_Init reached -- rendering subsystem initialization begins, cycle=80134964
+[MILESTONE] R_InitTextures reached, cycle=80135116
+[MILESTONE] I_Error reached -- a fatal DOOM engine error path was taken, cycle=80140294
+[RESULT] HALTED (ECALL/_exit reached) at pc=0x1003ab68, cycle=80186517, fb_writes_seen=0
+```
+
+None of `R_InitFlats`/`R_InitSpriteLumps`/`R_InitColormaps`/`R_InitPointToAngle`/`R_InitSkyMap` fired — confirming `I_Error` is called from inside `R_InitTextures` itself (only 152 cycles after entry, then only 5,178 more cycles to `I_Error`: a handful of instructions, not a long computation first).
+
+Re-examined `software/upstream/doomgeneric/r_data.c`'s `R_InitTextures` and `GenerateTextureHashTable` by hand against the "every un-preloaded lump reads as zero" fact: `nummappatches`/`numtextures1`/`numtextures2` all evaluate to 0 (read from zeroed PNAMES/TEXTURE1/TEXTURE2 content), making `numtextures=0`, which makes every per-texture loop (including `GenerateTextureHashTable`'s `% numtextures` divide, which looked like a plausible divide-by-zero candidate) a no-op since the loop bound is 0. Every `Z_Malloc(0-ish size, PU_STATIC, NULL/0)` call in this path matches a pattern (`d_main.c`'s earlier `gamename = Z_Malloc(gamename_size, PU_STATIC, 0)`) already proven to succeed earlier in this exact run. `I_ConsoleStdout()` is hardcoded to return 0 on this target, so the `printf` box-drawing path is dead code. **No further candidate was provable from source reading alone** — logged as an open question rather than guessed at.
+
+### Attempt 8/9: capturing `a0`-`a7` at `I_Error` resolves the exact call site via ELF `.rodata`
+
+Rather than keep guessing from source, added a register capture at the `I_Error` milestone: `a0` (`x10`, RISC-V's first integer argument) holds `I_Error(char *error, ...)`'s format-string pointer, and every `I_Error` call site in the DOOM source passes a distinct literal C string constant — so the resolved address can be looked up directly in `doom.elf`'s `.rodata` to identify exactly which of the many call sites fired, with certainty. `a1`-`a7` were captured alongside it to resolve any `%s`/`%d` argument (several candidate messages, e.g. `"W_GetNumForName: %s not found!"` or `"Z_Malloc: failed on allocation of %i bytes"`, take one) in the same run. Implementation: `dut_cpu.u_regfile.regs[10..17]` read directly in the testbench at the same `posedge clk` the `I_Error` milestone already fires on.
+
+**An Animas orchestration quirk surfaced while relaunching for this**: calling `run_simulation` while a previous daemon-backed job was still mid-run caused the MCP tool call itself to time out client-side after 300s with "no response" — but the underlying request *had* actually reached Animas and triggered a fresh `handleRunSim()` (confirmed by `zsim.log` being freshly rewritten, line count reset, a brand-new compile with no `cycle=0` yet, under the exact same daemon PID). Separately, a second, fully independent headless Zenith subprocess also got spawned (apparently a client-side retry before the tool gave up) whose stdout/stderr went to anonymous pipes with no readable log path at all — a real duplicate-job/observability gap, distinct from the GUI-cancellation-vs-MCP-state discrepancy found earlier in M5 S3. Resolved by identifying and terminating only the orphaned duplicate (confirmed via `ps`/`/proc` ownership before acting) and continuing to monitor the one daemon-backed job that was actually progressing correctly.
+
 ## M6 (bootloader follow-up) — WAD-copy gap closed in firmware, regression re-verified: PASS
 
 While writing `docs/how_to_run_doom.md` during M6, found that `firmware/bootloader/bootloader_main.c` read the SD boot image header's `wad_lba_start`/`wad_length` fields (`header[6]`/`header[7]`) nowhere, even though `scripts/prepare_sd_image.py` already supported embedding a WAD via those exact fields — so the bootloader copied the program but silently never copied any embedded WAD. Fixed: added a second copy loop (same `sdspi_read_block` mechanism as the existing program copy) guarded on `wad_lba_start != 0`, copying into the fixed `WAD_SDRAM_BASE = 0x1400_0000` that `software/doom_port/w_file_de2115.c` already assumes, with a new `LED_BOOT_LOADING_WAD` (`0x6`) status code. Every boot image built so far has `wad_lba_start=0` (none were built with `--wad`), so this is purely additive.
