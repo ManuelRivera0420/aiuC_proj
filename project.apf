@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-08T01:19:11.830013+00:00",
+    "modified": "2026-11-08T01:47:47.671489+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -196,7 +196,8 @@
     "auto_rtl_top": "counter",
     "auto_sim_top": "test/counter_tb.sv",
     "auto_discover_status": "ok",
-    "auto_discover_candidates": []
+    "auto_discover_candidates": [],
+    "waveform_mode": "off"
   },
   "ui_state": {
     "active_vcd": null,

@@ -34,3 +34,11 @@ utc_ts,milestone,metric,value,unit
 2026-11-08T03:15:00Z,M6,board_top_smoke_checks_passed,3,count
 2026-11-08T03:15:00Z,M6,board_top_smoke_checks_total,3,count
 2026-11-08T03:15:00Z,M6,new_docs_written,4,count
+2026-11-08T05:30:00Z,M5,s3_execution_cycles_before_halt,11620521,count
+2026-11-08T05:30:00Z,M5,s3_fb_writes_observed,0,count
+2026-11-08T05:30:00Z,M5,ui_remote_control_throughput_cycles_per_sec,5000,cycles/sec
+2026-11-08T05:30:00Z,M5,headless_throughput_cycles_per_sec,11800,cycles/sec
+2026-11-08T05:30:00Z,M5,headless_vs_ui_speedup_factor,2.3,ratio
+2026-11-08T05:30:00Z,M5,m5_s3_zwdb_size_bytes,8569446043,bytes
+2026-11-08T05:30:00Z,M4,regression_recheck_checks_passed,7,count
+2026-11-08T05:30:00Z,M4,regression_recheck_checks_total,7,count

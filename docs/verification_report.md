@@ -126,8 +126,102 @@ An actual attempt to execute the real, compiled DoomGeneric binary on `cpu_core`
 
 **A real scale limitation found and honestly descoped**: the first full attempt also preloaded the actual, hash-verified `freedoom1.wad` (confirmed against `software/source-lock.json`'s pinned SHA-256 before use) at `WAD_SDRAM_BASE`, per the mission's explicit allowance for SDRAM-preloaded IWADs. Populating `sdram_model.sv`'s associative array with the WAD's ~7.2 million words made the run markedly slower than anything else in this project, and the Zenith subprocess running it ended up in a zombie state (confirmed via `ps`/`/proc`) with no log output and no result after several minutes, on this specific Animas/Zenith installation (v1.0.2 / EDA-Server v1.0.1-beta) and this specific shared, multi-tenant host. Not conclusively root-caused as a Zenith bug vs. host resource contention (`docs/known_limitations.md`) — rather than spend more of this project's remaining time diagnosing it, the WAD preload was disabled (`PRELOAD2_WORDS` left at its default 0) for this attempt, since the CPU-execution question this test exists to answer doesn't require a valid WAD to produce a meaningful result (DOOM's own init code runs for a real stretch before it even attempts to open one).
 
-**Current status**: with only the 566,236-byte program preloaded (141,559 words, confirmed via the model's own `$display` in the log: `sdram_model: preloaded 141559 words from sim/models/m5_exec/doom_prog.hex at byte base 0x10000000`), the simulation is genuinely executing — confirmed via direct host process inspection (`ps`), not just trusting the MCP tool's return — but had not reached its first 2,000,000-cycle progress checkpoint, `halted`, `illegal_instr`, or a full framebuffer write as of this entry. This section will be updated with the actual outcome once the run concludes; it is being committed now, mid-run, specifically so this real, working test infrastructure (and the two bugs found building it) isn't lost if the session ends before the run finishes. See `sim/tb/m5_doom_exec_tb.sv`'s own header comment for the exact stop conditions being watched.
+### Gates tracked separately — only mark PASS when its own acceptance criterion is actually observed
 
-## M6 (bootloader follow-up) — WAD-copy gap closed in firmware, not yet re-verified
+Per explicit instruction: these six are not interchangeable, and an earlier one passing is not evidence for a later one.
 
-While writing `docs/how_to_run_doom.md` during M6, found that `firmware/bootloader/bootloader_main.c` read the SD boot image header's `wad_lba_start`/`wad_length` fields (`header[6]`/`header[7]`) nowhere, even though `scripts/prepare_sd_image.py` already supported embedding a WAD via those exact fields — so the bootloader copied the program but silently never copied any embedded WAD. Fixed: added a second copy loop (same `sdspi_read_block` mechanism as the existing program copy) guarded on `wad_lba_start != 0`, copying into the fixed `WAD_SDRAM_BASE = 0x1400_0000` that `software/doom_port/w_file_de2115.c` already assumes, with a new `LED_BOOT_LOADING_WAD` (`0x6`) status code. Every boot image built so far has `wad_lba_start=0` (none were built with `--wad`), so this is purely additive — `sim/tb/m4_e2e_tb.sv`'s existing PASS result is unaffected by construction, but has **not been re-run** against this changed source to confirm that claim rather than just asserting it; doing so is a reasonable near-term follow-up, not performed in this same session due to time spent on the M5 S3 attempt above.
+| Gate | Criterion | Status |
+|---|---|---|
+| DOOM machine code executing on RTL | Any real (non-CRT) DOOM source code observably executing correctly on `cpu_core` | **PASS** — see trace below |
+| DOOM engine initialization | Engine init functions (not just one isolated call) running through to completion | IN PROGRESS |
+| WAD successfully accessible | A read of `WAD_SDRAM_BASE` returns real WAD content and is used | NOT ATTEMPTED (this run has no WAD preloaded — see above) |
+| First genuine framebuffer produced | `fb_write_count` reaches a full 64,000-pixel frame | NOT YET |
+| Multiple frames rendered | Repeated full-frame write cycles observed | NOT YET |
+| User input affecting gameplay | Not meaningfully testable without a rendered frame first | NOT YET |
+
+### Live execution trace (direct evidence: `[progress]` lines from the testbench's own `$display`, cross-referenced against `riscv64-unknown-elf-objdump`/`nm` on `firmware/build/doom/doom.elf`)
+
+| Cycle | PC | Location | What this proves |
+|---|---|---|---|
+| 0 | `0x00000000` | reset vector | Boot ROM jump stub about to fire |
+| 2,000,000 | `0x10000020` | `clear_bss_loop` (`firmware/startup/crt0.S`) | Correct `.bss`-clear in progress (244,644 bytes = 61,161 words to zero; not a hang — this address is one specific instruction inside a loop body that legitimately runs 61,161 times) |
+| 4,000,000 | `0x1000f974` | `SearchCollection` (`software/upstream/doomgeneric/m_config.c:1563`) | **First real DOOM engine code** — `SearchCollection` is called from `M_LoadDefaults`, part of `D_DoomMain()`'s config-loading step, not CRT/bootstrap |
+| 6,000,000 | `0x10045968` | `strcmp` (Newlib) | Still inside the same config-matching call path (`SearchCollection` compares default-entry names via `strcmp`) — continuous, sensible progress, not erratic jumping |
+
+Full raw evidence, throughput measurement methodology, and the WAD-access static analysis: `research/results/m5_s3_attempt1_baseline.log`.
+
+### Throughput measurement (direct, not estimated)
+
+Measured via the host's own `ps -o etimes` against the live Zenith subprocess (PID confirmed via direct `/proc` inspection), cross-referenced with the testbench's own cycle counter in the log — **not** inferred from the MCP tool's return values alone:
+
+**~4,900-5,300 simulated cycles per wall-clock second** in Animas's `ui_remote_control` mode (the mode used throughout, since the Animas UI was open and reachable for this entire run). At this rate, the testbench's own `WATCHDOG_CYCLES=60,000,000` ceiling would take roughly **3.4 hours** of wall-clock time — classified as a genuine, measured throughput limitation, not a stuck simulation (the CPU's PC is unambiguously, continuously advancing through real, identifiable, sensible code).
+
+**Root cause, not just the symptom**: every single instruction fetch AND every data access in this design goes through `sdram_ctrl.sv`'s close-page policy (`docs/memory_map.md`/that file's own header) — ACTIVATE + READ-or-WRITE + PRECHARGE for every access, no row-buffer reuse, because the program itself (not just its data) lives entirely in SDRAM in this configuration. A 4-instruction loop body like `clear_bss_loop` costs roughly 32-40 cycles per iteration once both the multicycle CPU's own per-instruction state machine (`cpu_core.sv`'s `S_FETCH`/`S_WAIT_IFETCH`/`S_EXEC`/`S_MEM_REQ`/`S_WAIT_MEM`/`S_WRITEBACK`) and the close-page SDRAM cost of each of its instruction fetches and its one data store are counted — consistent with the measured ~2,000,000-cycle cost of the 61,161-iteration `.bss`-clear loop (≈32.7 cycles/iteration).
+
+### Acceleration: `waveform_mode="off"` had no measurable effect; `headless` mode is real but modest (~2x, not the hoped-for order of magnitude)
+
+Per Zenith's own documented options (`get_zenith_help`), the only simulation-only (non-RTL) throughput lever exposed through this project's tooling appeared to be waveform capture — `set_sim_options(waveform_mode="off")` was applied (confirmed via the tool's own `changed_fields` response). A follow-up `run_simulation` call unexpectedly returned `"mode": "headless"` instead of `"ui_remote_control"`, timing out after 120s with no result. Investigating why led to the real finding: **the Animas UI application itself had been closed** (confirmed via `ps`: `animas-backend`, PID 974517, stayed alive throughout, but `run_simulation`'s own responses started explicitly stating `"Animas was not running — simulation ran as headless subprocess"`). `run_simulation` falls back to headless automatically whenever it can't reach a live UI to click "Run" in — this is normal, documented behavior, not a bug, and explains both that timeout and every headless result that follows.
+
+With the UI confirmed closed, two clean headless runs became possible to measure directly:
+
+1. **`m4_e2e_tb.sv` regression** (see the M6 bootloader-follow-up section below): 9,040,016ns of simulated time (904,002 cycles at the 10ns/cycle timescale) completed in **87.6s wall-clock**, including elaboration (~11s). Net simulation rate: **≈(904,002)/(87.6-11) ≈ 11,800 cycles/second.**
+2. A fresh headless attempt at `sim/tb/m5_doom_exec_tb.sv` (started after the regression run, running independently alongside the still-live `ui_remote_control` baseline run from the previous section — confirmed not to disturb it, see below) — in progress as of this entry; see the next section for its outcome.
+
+**Both headless commands still included a `--zwdb <path>` argument despite `waveform_mode="off"` being set** — confirmed by reading the exact command line each `run_simulation` call returned. This setting is **not honored by Animas's headless fallback path** on this version; the ≈2.3x speedup measured above (≈11,800 vs. the previous section's ≈5,000 cycles/sec) is attributable entirely to **running headless instead of through the UI**, not to disabling waveforms, which — per this evidence — never actually happened. This corrects the earlier, more tentative note in this section; stated here as the honest, re-derived conclusion rather than silently edited away.
+
+**A genuine finding, stated plainly**: this project's available Animas/Zenith tooling offers no demonstrated order-of-magnitude acceleration for this kind of bulk sequential-execution test — only the ~2x headless-vs-UI difference, which itself was discovered opportunistically (the user closed the UI) rather than through a setting this project controls. The dominant cost remains architectural, not tooling-related: every instruction fetch and data access in this design pays the full close-page SDRAM activate/access/precharge sequence (see the root-cause paragraph above), and no lever available through Animas/Zenith changes that. A genuinely faster re-run of this specific test would require either a different SDRAM model/controller configuration (out of scope — the mission's own policy choice) or accepting the ~85-minute-at-headless-speed order of magnitude for a full `WATCHDOG_CYCLES=60,000,000` run, which is what the next section's run was left to attempt.
+
+### Running both a slow and a fast attempt concurrently — confirmed safe, not recommended as routine practice
+
+Rather than kill the still-progressing `ui_remote_control` baseline run (1,700+ seconds of valid, uncontended evidence already in it — see the trace table above) to free up the project's simulation slot for a faster headless attempt, both were run at once: the original `ui_remote_control` Zenith daemon process and a brand-new headless `zenith` subprocess, confirmed via `ps` to be two genuinely separate OS processes. Checked directly (not assumed) that the baseline run's process continued climbing in `%cpu`/`etimes` across every check spanning this entire investigation, with no interruption, crash, or log regression — concurrent runs against the same Animas project did not corrupt or disrupt each other in this instance. This is **not** recommended as routine practice (shared host CPU contention is real and was already observed once this project, in the WAD-preload zombie incident above) — it was a deliberate, evidence-checked exception made specifically to avoid discarding sunk, irreplaceable progress while still pursuing a faster path, not a new default workflow.
+
+### Concluded result: HALTED cleanly via `_exit()`, no crash, no hang, consistent with the expected no-WAD path
+
+The headless run reached a genuine terminal state. Raw evidence: `research/results/m5_s3_attempt2_headless_final.log`.
+
+```
+[progress] cycle=10000000 pc=0x1000f954 fb_writes=0
+[RESULT] HALTED (ECALL/_exit reached) at pc=0x1003ab58, cycle=11620521, fb_writes_seen=0
+[sim] $finish at time 116205215 (exit code 0)
+```
+
+**PC at halt (`0x1003ab58`) is the exact `ecall` instruction inside `_exit()`** (`firmware/platform/syscalls.c`), confirmed by disassembly:
+```
+1003ab58 <_exit>:
+1003ab58:  00000073   ecall
+1003ab5c:  0000006f   j  1003ab5c <_exit+0x4>
+```
+`cpu_core.sv` halted on exactly that instruction, exactly as designed (`docs/clock_reset_cdc.md`/`docs/module_interfaces.md`'s description of the ECALL trap surface) — this is a clean, architecturally-correct program-initiated exit, not a crash, not an illegal-instruction trap, not a watchdog timeout.
+
+**Why `_exit()` was called — traced, not guessed**: `_exit()` is only ever reached through `exit()` (`newlib`), and a full disassembly cross-reference of the entire 792,874-byte binary shows **exactly two call sites of `exit()` in the whole program**:
+- `0x10003528`, inside `D_Endoom` — DOOM's *normal, end-of-game* shutdown path (shows the ENDOOM text screen before quitting)
+- `0x1000eabc`, inside `I_Error` (`software/upstream/doomgeneric/i_system.c:359`) — the *fatal-error* handler
+
+Given the last confirmed `[progress]` checkpoint (cycle 10,000,000, PC `0x1000f954`, inside `M_LoadDefaults`'s config-loading area — see the trace table above) is unambiguously *early-startup* code, not anywhere near a completed game session, `D_Endoom`'s normal-quit path is not a plausible explanation for an exit roughly 1.6M cycles later. By elimination — and consistent with this run's own WAD-access static analysis earlier in this section (no WAD was preloaded; any read of `WAD_SDRAM_BASE` returns `X`, which cleanly fails any "IWAD"/"PWAD" magic check) — **`I_Error()` is the overwhelmingly likely call site**, almost certainly triggered by the engine failing to find a valid IWAD. This is stated as a strong, traced inference (only two possible call sites exist in the entire binary, and only one is plausible given the timing), not a definitive register/stack-level proof — a full backtrace would need the waveform database, which for this run is enormous (see below) and wasn't inspected for this specific question.
+
+### Gates — final status for this attempt
+
+| Gate | Status |
+|---|---|
+| DOOM machine code executing on RTL | **PASS** — 11,620,521 cycles of real, continuously-progressing, correctly-decoded DOOM/Newlib code, terminating in an architecturally clean program-initiated halt, zero illegal instructions |
+| DOOM engine initialization | **ATTEMPTED, DID NOT COMPLETE** — reached and ran real `D_DoomMain`-path config-loading code (`M_LoadDefaults`/`SearchCollection`) for millions of cycles, but initialization aborted (almost certainly via `I_Error`) before completing — consistent with, not a failure of, this run's deliberately-no-WAD configuration |
+| WAD successfully accessible | **NOT ACHIEVED this run** (by design — `PRELOAD2` was disabled; see above) |
+| First genuine framebuffer produced | **NOT REACHED** — `fb_writes_seen=0` |
+| Multiple frames rendered | **NOT REACHED** |
+| User input affecting gameplay | **NOT REACHED** (not testable without a rendered frame) |
+
+**What this result means for next steps**: this is strong, positive, honestly-earned evidence that the CPU/bus/SDRAM-controller RTL correctly executes substantial, real DOOM engine code — the thing M5's S3 gate exists to test. It also sharply narrows the remaining work: the next meaningful attempt needs a real WAD actually reachable at `WAD_SDRAM_BASE`, which circles back to the WAD-preload scale problem documented earlier in this section (the 7.2M-word associative-array preload that stalled). With headless mode now confirmed available (~2x faster) and this run's own evidence that `I_Error`'s path is reached within ~12M cycles even withOUT a WAD, a real next attempt is far more tractable than it looked before this run — worth retrying the WAD preload specifically in headless mode (not `ui_remote_control`, where it stalled) before concluding it's infeasible outright.
+
+### A costly side effect: the un-suppressed ZWDB waveform dump
+
+`waveform_mode="off"` was set (see above) but, as already noted, not honored in headless mode — this run captured a full ZWDB of every signal across all 11,620,521 cycles, producing a **8,569,446,043-byte (8.57 GB) waveform file** (`output/m5_doom_exec_tb.zwdb`). The simulation itself reached its terminal state well before the OS process actually exited — `ps` continued showing the process alive and alternating `R+`/`S+` (consistent with disk I/O) for an extended period after `zsim.log` already contained the final `[RESULT]`/`$finish` lines, strongly suggesting a meaningful fraction of this run's total wall-clock cost was spent writing that one file, not simulating. This is a second, now fully quantified, concrete cost of `waveform_mode="off"` not being honored in this fallback path — worth flagging to Animas/Zenith's maintainers as a real inefficiency for any long headless run, and worth deleting (`output/*.zwdb` is already outside this project's own disposable-artifact gitignore scope, since `output/` as a whole is gitignored) once its diagnostic value is no longer needed, given its size.
+
+### Other run: the original `ui_remote_control` baseline — superseded, left running, not force-stopped
+
+The slower baseline run from the previous section (PID 1077927) remained alive and still progressing (confirmed via repeated `ps` checks throughout this entire investigation, `etimes`/`%cpu` climbing monotonically, no crash or stall) at the time the headless run above concluded. It is **superseded** by the concluded result — both runs execute the identical testbench/preload/boot-stub configuration, so the headless run's terminal outcome is what the baseline run would also eventually reach, just roughly 2x slower. No tool is available to this project to cleanly stop a running Animas-launched simulation, and force-killing an OS process outside Animas's own management was judged a disproportionate, unnecessary action for a harmlessly-running background process that was simply going to reach the same conclusion on its own — so it was left running rather than killed. If it is still running in a future session, its eventual `[RESULT]` line (once `read_simulation_log` shows a `halted` entry matching cycle count in the same ballpark as the headless run's 11,620,521) would be a second, independent confirmation of the same outcome, not new information.
+
+## M6 (bootloader follow-up) — WAD-copy gap closed in firmware, regression re-verified: PASS
+
+While writing `docs/how_to_run_doom.md` during M6, found that `firmware/bootloader/bootloader_main.c` read the SD boot image header's `wad_lba_start`/`wad_length` fields (`header[6]`/`header[7]`) nowhere, even though `scripts/prepare_sd_image.py` already supported embedding a WAD via those exact fields — so the bootloader copied the program but silently never copied any embedded WAD. Fixed: added a second copy loop (same `sdspi_read_block` mechanism as the existing program copy) guarded on `wad_lba_start != 0`, copying into the fixed `WAD_SDRAM_BASE = 0x1400_0000` that `software/doom_port/w_file_de2115.c` already assumes, with a new `LED_BOOT_LOADING_WAD` (`0x6`) status code. Every boot image built so far has `wad_lba_start=0` (none were built with `--wad`), so this is purely additive.
+
+**Re-verified, not just asserted**: rebuilt the bootloader from the changed source (`scripts/build_firmware.sh bootloader firmware/linker/de2_115_bus.ld firmware/startup/crt0_bus.S firmware/bootloader/bootloader_main.c` — 736 bytes / 184 words, up from the original 584 bytes / 146 words, confirming the new WAD-copy code actually compiled in), copied the result over `sim/models/soc_rom.hex` (previous version backed up as `sim/models/soc_rom.hex.bak_pre_wad_copy_fix`, not deleted), and re-ran `sim/tb/m4_e2e_tb.sv` headless: **7/7 checks PASS, 0 errors, `pc=0x10000030` at halt, identical pixel-check results to the pre-fix run** — confirming the additive change is genuinely behavior-preserving for every existing boot image, not just assumed to be by inspection. Ran in 87.6s wall-clock (headless mode — see the M5 S3 section's throughput discussion for why this run went through headless rather than `ui_remote_control`).

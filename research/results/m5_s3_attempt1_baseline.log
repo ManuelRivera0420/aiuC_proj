@@ -1,0 +1,105 @@
+M5 S3 execution attempt #1 (unoptimized, ZWDB waveform capture enabled)
+=========================================================================
+Testbench: sim/tb/m5_doom_exec_tb.sv
+Mode: Animas ui_remote_control (Animas UI open; this is Zenith's slower,
+UI-synchronized execution path -- see docs/known_limitations.md)
+Preload: PRELOAD1 only (DOOM program, 141,559 words / 566,236 bytes at
+0x10000000). PRELOAD2 (freedoom1.wad, 7,198,769 words) deliberately
+disabled -- see sim/tb/m5_doom_exec_tb.sv's header comment and
+docs/verification_report.md's M5 S3 section for why.
+
+Observed progress checkpoints (from zsim.log's own [progress] lines,
+printed by the testbench every 2,000,000 simulated clock cycles):
+
+  cycle=0        pc=0x00000000  fb_writes=0   (reset vector, boot ROM)
+  cycle=2000000  pc=0x10000020  fb_writes=0   (inside clear_bss_loop,
+                                                crt0.S -- see disassembly
+                                                below)
+  cycle=4000000  pc=0x1000f974  fb_writes=0   (inside SearchCollection,
+                                                software/upstream/
+                                                doomgeneric/m_config.c --
+                                                REAL DOOM ENGINE CODE,
+                                                not CRT/bootstrap)
+
+Disassembly confirming cycle=2,000,000's PC (riscv64-unknown-elf-objdump
+-d firmware/build/doom/doom.elf):
+
+    10000018 <clear_bss_loop>:
+    10000018: 0062d863  bge  t0,t1,10000028 <clear_bss_done>
+    1000001c: 0002a023  sw   zero,0(t0)
+    10000020: 00428293  addi t0,t0,4          <-- PC sampled here
+    10000024: ff5ff06f  j    10000018 <clear_bss_loop>
+
+  __bss_start=0x1008a3dc, __bss_end=0x100c5f80 (readelf -s) -> .bss size
+  = 0x3bba4 = 244,644 bytes = 61,161 words to zero-clear, one word per
+  loop iteration, confirming this is NOT a hang: it is the expected,
+  correct crt0 .bss-clear loop, just slow because every iteration's
+  4 instructions each cost a full close-page SDRAM access (fetch AND
+  the one data store), and the loop runs 61,161 times.
+
+Symbol lookup confirming cycle=4,000,000's PC (riscv64-unknown-elf-nm):
+
+    1000f924 t SearchCollection   (PC 0x1000f974 = SearchCollection+0x50)
+
+  software/upstream/doomgeneric/m_config.c:1563 defines SearchCollection,
+  called from M_LoadDefaultFile/M_LoadDefaults -- this is DOOM's config
+  system (key-binding/variable defaults), called early from D_DoomMain(),
+  which main() calls via doomgeneric_Create(). This is the test's first
+  confirmed evidence of REAL DOOM ENGINE CODE (not just crt0 bootstrap)
+  executing correctly on cpu_core.
+
+Throughput measurement (wall-clock, via direct host `ps -o etimes` on the
+live Zenith subprocess, cross-checked against zsim.log's own checkpoint
+lines -- not estimated, not assumed):
+
+  ~4,000,000 simulated cycles reached at ~820s of process wall-clock time
+  (process start ~= run_simulation call; cycle=0 and the program preload
+  message were both already present within the first ~11s per
+  run_simulation's own "elapsed_s" return, so ~820s is effectively all
+  post-preload simulation time)
+
+  => throughput ~= 4,000,000 / 820 =~ 4,878 simulated cycles/second
+
+  At this rate, the testbench's own WATCHDOG_CYCLES=60,000,000 ceiling
+  would take ~12,300s (~3.4 hours) of wall-clock time -- far too slow to
+  responsibly wait out within one interactive session, and it would
+  occupy this project's only Animas simulation slot for that entire
+  window, blocking the M4 regression re-run this same work also needs.
+  Classified as a genuine, measured simulation-throughput limitation (see
+  docs/verification_report.md's M5 S3 section), not a stuck/hung
+  simulation -- the CPU is unambiguously making correct forward
+  architectural progress, just slowly.
+
+Host process evidence (not just the MCP tool's self-reported status --
+independently confirmed via /proc and ps):
+
+  PID 1077927, parent 974517 (animas-backend), state alternating
+  R+/S+ across repeated samples, %CPU (cumulative average) climbing
+  monotonically across samples (17.7% @ 236s -> 42.5% @ 433s -> 54.2% @
+  711s) -- consistent with a genuinely active, computing process, not a
+  stalled/zombied one (contrast with the FIRST attempt's PID 1077004,
+  which went S+ -> Z+ zombie with zero log progress -- see
+  docs/verification_report.md's account of that).
+
+WAD-access analysis (static code-path reasoning, since execution had not
+yet reached this code at the time of writing):
+
+  PRELOAD2 (the WAD) is disabled for this run, so sdram_model.sv's
+  mem_store[] has NO entries anywhere in the WAD_SDRAM_BASE (0x14000000)
+  region. Any read there will hit sdram_model.sv's `mem_store.exists(key)
+  ? mem_store[key] : 32'hXXXXXXXX` fallback and return X (unknown), for
+  every single word, with no exception or error signaled -- the read
+  looks electrically "successful" (mem_ready still asserts normally) but
+  the DATA is X. software/doom_port/w_file_de2115.c's De2115_OpenFile()
+  unconditionally succeeds (it never inspects the WAD's content itself --
+  only sets up the mapped pointer/length), so the actual IWAD-identify
+  check happens later, in the generic w_wad.c/d_iwad.c path, when it
+  reads and compares the first 4 bytes against "IWAD"/"PWAD" ASCII magic.
+  Comparing X against a concrete literal in a 4-state simulator
+  evaluates as a clean, deterministic non-match (X does not equal any
+  concrete bit pattern), so the expected, correct outcome is a clean
+  "not a valid WAD" detection and an I_Error()/exit(-1) path -- NOT
+  undefined/nondeterministic branching, because the comparison itself
+  (not a branch directly on an X-valued condition) is what's evaluated.
+  This will be confirmed or revised with direct evidence once execution
+  actually reaches that code, rather than left as an assumption.

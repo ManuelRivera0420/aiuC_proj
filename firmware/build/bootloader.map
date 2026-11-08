@@ -16,31 +16,31 @@ Linker script and memory map
 LOAD /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
 LOAD /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
-.text           0x00000000      0x248
+.text           0x00000000      0x2e0
  *(.text.start)
  .text.start    0x00000000       0x68 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
                 0x00000000                _start
  *(.text .text.*)
  .text          0x00000068        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
- .text          0x00000068      0x1e0 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+ .text          0x00000068      0x278 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
                 0x000000d4                main
 
-.rela.dyn       0x00000248        0x0
+.rela.dyn       0x000002e0        0x0
  .rela.text.start
-                0x00000248        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
+                0x000002e0        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
 
 .rodata
  *(.rodata .rodata.* .srodata .srodata.*)
 
-.data           0x00010000        0x0 load address 0x00000248
+.data           0x00010000        0x0 load address 0x000002e0
                 0x00010000                        __data_start = .
  *(.data .data.* .sdata .sdata.*)
  .data          0x00010000        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
  .data          0x00010000        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
                 0x00010000                        __data_end = .
-                0x00000248                        __data_load_start = LOADADDR (.data)
+                0x000002e0                        __data_load_start = LOADADDR (.data)
 
-.bss            0x00010000        0x0 load address 0x00000248
+.bss            0x00010000        0x0 load address 0x000002e0
                 0x00010000                        __bss_start = .
  *(.bss .bss.* .sbss .sbss.*)
  .bss           0x00010000        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
@@ -68,9 +68,9 @@ OUTPUT(/home/marivera/Documents/aiuC_proj/firmware/build/bootloader.elf elf32-li
  .note.GNU-stack
                 0x00000000        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
-.debug_line     0x00000000      0x3a8
+.debug_line     0x00000000      0x488
  .debug_line    0x00000000       0xb6 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
- .debug_line    0x000000b6      0x2f2 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+ .debug_line    0x000000b6      0x3d2 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
 .debug_line_str
                 0x00000000       0x79
@@ -81,13 +81,13 @@ OUTPUT(/home/marivera/Documents/aiuC_proj/firmware/build/bootloader.elf elf32-li
                 0x00000079        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
                                  0x6f (size before relaxing)
 
-.debug_info     0x00000000      0x2dd
+.debug_info     0x00000000      0x386
  .debug_info    0x00000000       0x24 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
- .debug_info    0x00000024      0x2b9 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+ .debug_info    0x00000024      0x362 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
-.debug_abbrev   0x00000000      0x1ba
+.debug_abbrev   0x00000000      0x1c6
  .debug_abbrev  0x00000000       0x14 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
- .debug_abbrev  0x00000014      0x1a6 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+ .debug_abbrev  0x00000014      0x1b2 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
 .debug_aranges  0x00000000       0x40
  .debug_aranges
@@ -95,21 +95,21 @@ OUTPUT(/home/marivera/Documents/aiuC_proj/firmware/build/bootloader.elf elf32-li
  .debug_aranges
                 0x00000020       0x20 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
-.debug_str      0x00000000      0x176
- .debug_str     0x00000000      0x176 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
+.debug_str      0x00000000      0x194
+ .debug_str     0x00000000      0x194 /home/marivera/Documents/aiuC_proj/firmware/build/crt0_bus.o
                                  0x4b (size before relaxing)
- .debug_str     0x00000176        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
-                                0x138 (size before relaxing)
+ .debug_str     0x00000194        0x0 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+                                0x169 (size before relaxing)
 
 .debug_loclists
-                0x00000000      0x16c
+                0x00000000      0x1fb
  .debug_loclists
-                0x00000000      0x16c /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+                0x00000000      0x1fb /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
 .debug_rnglists
-                0x00000000       0x17
+                0x00000000       0x32
  .debug_rnglists
-                0x00000000       0x17 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+                0x00000000       0x32 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
 
-.debug_frame    0x00000000       0x64
- .debug_frame   0x00000000       0x64 /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o
+.debug_frame    0x00000000       0x6c
+ .debug_frame   0x00000000       0x6c /home/marivera/Documents/aiuC_proj/firmware/build/bootloader_main.o

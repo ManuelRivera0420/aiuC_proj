@@ -50,6 +50,16 @@ Four new docs: `docs/module_interfaces.md` (every module's port list/bus protoco
 
 Full writeup: `docs/fpga_handoff.md`, `docs/module_interfaces.md`, `docs/clock_reset_cdc.md`, `docs/how_to_run_doom.md`. Evidence: `research/results/m6_board_top_smoke.log`.
 
-## Overall status after M6
+## M5 — S3 direct-execution attempt: ATTEMPTED, CONCLUDED, PARTIAL (2026-11-08)
 
-M0-M4 and M6 are fully done and verified. M5 is the one open gap in the whole project: DOOM compiles/links cleanly (S0-S2) but has never been executed on `cpu_core`, in simulation or otherwise (S3-S4 not attempted) — see `PROJECT_STATE.md`'s "concrete next step" for the direct-SDRAM-preload testbench that would unblock it, and `docs/fpga_handoff.md` §4 / `docs/how_to_run_doom.md` for the honest, explicit statement of that gap plus the separate bootloader WAD-copy gap found while writing the M6 docs.
+The direct-SDRAM-preload testbench (`sim/tb/m5_doom_exec_tb.sv`) actually executed the real, compiled DoomGeneric binary on `cpu_core` — not just compiled it. Result: 11,620,521 cycles of real engine code (confirmed via disassembly-matched PC checkpoints: `crt0`'s `.bss`-clear → `M_LoadDefaults`/`SearchCollection` in `m_config.c` → `strcmp`), then a clean, architecturally-correct `HALTED` via `_exit()`'s `ecall`, zero illegal instructions, zero hangs. Traced to almost certainly `I_Error()` (the only two call sites of `exit()` in the entire 792KB binary are `D_Endoom`, implausible this early, and `I_Error`), consistent with this run's deliberately-unpopulated WAD region. Gate-by-gate: "DOOM machine code executing on RTL" = **PASS**; "DOOM engine initialization" = attempted, did not complete; WAD-accessible/first-frame/multi-frame/input = not reached. Full trace, disassembly cross-references, and gate table: `docs/verification_report.md`'s M5 S3 section.
+
+Also found and fixed along the way: a `ZEN-6033` LRM violation in the new SDRAM preload mechanism (same bug class as M1's `sync_mem.sv` fix), and a genuine Animas/Zenith tooling finding — `run_simulation` silently falls back to a ~2x-faster `headless` mode when the Animas UI is closed, but `set_sim_options(waveform_mode="off")` is not honored in that path (confirmed twice), costing an unsuppressed 8.57GB waveform dump on this run.
+
+Separately, re-verified the M6-session bootloader WAD-copy fix against `sim/tb/m4_e2e_tb.sv`: rebuilt `sim/models/soc_rom.hex` from the changed `bootloader_main.c` source and re-ran headless — **7/7 PASS, 0 errors**, identical result to before the fix, confirming the addition is genuinely behavior-preserving for every existing boot image.
+
+**Concrete next step for M5**: retry the WAD preload (the thing that stalled in `ui_remote_control` mode) now that headless mode is confirmed both available and faster — that specific combination hasn't been tried yet.
+
+## Overall status after M6 and the M5 S3 attempt
+
+M0-M4 and M6 are fully done and verified. M5's S0-S2 gates are done; S3 has now genuinely been attempted (not skipped) with a real, honest, partial result — DOOM engine code runs correctly on this CPU, but the engine can't get past IWAD identification without a real WAD actually reachable in SDRAM. That WAD-preload-at-scale problem is the one concrete remaining blocker in the whole project, and it's now narrower and better understood than it was before this session (`docs/verification_report.md`'s M5 S3 section has the full investigation, including what was tried, what failed, and why).
