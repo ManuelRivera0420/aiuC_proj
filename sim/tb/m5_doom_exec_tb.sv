@@ -118,9 +118,25 @@ module m5_doom_exec_tb;
     sdram_model #(
         .PRELOAD1_FILE("sim/models/m5_exec/doom_prog.hex"),
         .PRELOAD1_WORDS(141563), // rebuilt after adding __wrap_D_FindIWAD; 4 words larger
-        .PRELOAD1_BYTE_BASE(32'h1000_0000)
-        // PRELOAD2 (freedoom1.wad) deliberately left at its default
-        // (disabled) -- see this file's header comment for why.
+        .PRELOAD1_BYTE_BASE(32'h1000_0000),
+        // PRELOAD2/3: the REAL freedoom1.wad's header (12 bytes, offset 0)
+        // and lump directory (50,608 bytes, offset 28,744,468 -- WAD
+        // directories live at the END of the file, confirmed by reading
+        // the real header's infotableofs field directly with Python
+        // before generating these two files) -- NOT the whole 28MB WAD,
+        // which is what stalled the first full-scale preload attempt
+        // (docs/verification_report.md's M5 S3 section). This gets
+        // W_AddFile() real IWAD-identification data and a real,
+        // correctly-populated lumpinfo[] table without that cost.
+        // Individual lump CONTENT is still unpopulated at this stage --
+        // a real, deliberately scoped next increment, not every lump
+        // preloaded at once.
+        .PRELOAD2_FILE("sim/models/m5_exec/wad_header.hex"),
+        .PRELOAD2_WORDS(3),
+        .PRELOAD2_BYTE_BASE(32'h1400_0000),
+        .PRELOAD3_FILE("sim/models/m5_exec/wad_directory.hex"),
+        .PRELOAD3_WORDS(12652),
+        .PRELOAD3_BYTE_BASE(32'h1400_0000 + 32'd28_744_468)
     ) u_sdram_model (
         .clk(dram_clk_w), .rst_n(rst_n),
         .dram_addr(dram_addr_w), .dram_ba(dram_ba_w), .dram_dq(dram_dq_w), .dram_dqm(dram_dqm_w),

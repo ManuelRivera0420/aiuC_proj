@@ -4,7 +4,7 @@
     "name": "aiuC_proj",
     "description": "",
     "created": "2026-11-07T19:55:29.055445+00:00",
-    "modified": "2026-11-08T01:47:47.671489+00:00",
+    "modified": "2026-11-08T02:33:39.067894+00:00",
     "id": "bff69947-9fc3-408f-bc64-4efffd9b8fe1"
   },
   "sources": [
@@ -180,6 +180,16 @@
     },
     {
       "path": "sim/models/m5_exec/freedoom1.hex",
+      "role": "mem",
+      "library": "work"
+    },
+    {
+      "path": "sim/models/m5_exec/wad_header.hex",
+      "role": "mem",
+      "library": "work"
+    },
+    {
+      "path": "sim/models/m5_exec/wad_directory.hex",
       "role": "mem",
       "library": "work"
     }

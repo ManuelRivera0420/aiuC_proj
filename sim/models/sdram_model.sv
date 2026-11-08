@@ -26,7 +26,16 @@ module sdram_model #(
     parameter logic [31:0]  PRELOAD1_BYTE_BASE  = 32'h0,
     parameter string        PRELOAD2_FILE       = "",
     parameter int           PRELOAD2_WORDS      = 0,
-    parameter logic [31:0]  PRELOAD2_BYTE_BASE  = 32'h0
+    parameter logic [31:0]  PRELOAD2_BYTE_BASE  = 32'h0,
+    // A third, independent region -- added so a single WAD file's
+    // header (a few bytes at its start) and lump directory (typically
+    // tens of KB, near its END -- see docs/verification_report.md's
+    // M5 S3 section) can both be preloaded without paying the cost of
+    // the whole multi-million-word file in between, which is what
+    // stalled the first full-WAD preload attempt.
+    parameter string        PRELOAD3_FILE       = "",
+    parameter int           PRELOAD3_WORDS      = 0,
+    parameter logic [31:0]  PRELOAD3_BYTE_BASE  = 32'h0
 ) (
     input  logic        clk,
     input  logic        rst_n,
@@ -110,9 +119,11 @@ module sdram_model #(
     // class as M1's sync_mem.sv fix, just via a different code path.
     logic [31:0] preload1_mem [0:(PRELOAD1_WORDS > 0 ? PRELOAD1_WORDS : 1) - 1];
     logic [31:0] preload2_mem [0:(PRELOAD2_WORDS > 0 ? PRELOAD2_WORDS : 1) - 1];
+    logic [31:0] preload3_mem [0:(PRELOAD3_WORDS > 0 ? PRELOAD3_WORDS : 1) - 1];
     initial begin
         if (PRELOAD1_FILE != "" && PRELOAD1_WORDS > 0) $readmemh(PRELOAD1_FILE, preload1_mem);
         if (PRELOAD2_FILE != "" && PRELOAD2_WORDS > 0) $readmemh(PRELOAD2_FILE, preload2_mem);
+        if (PRELOAD3_FILE != "" && PRELOAD3_WORDS > 0) $readmemh(PRELOAD3_FILE, preload3_mem);
     end
 
     integer i;
@@ -138,6 +149,13 @@ module sdram_model #(
                     mem_store[pack_key(word_addr[24:23], word_addr[22:10], word_addr[9:0])] = preload2_mem[w];
                 end
                 $display("sdram_model: preloaded %0d words from %s at byte base 0x%08h", PRELOAD2_WORDS, PRELOAD2_FILE, PRELOAD2_BYTE_BASE);
+            end
+            if (PRELOAD3_FILE != "" && PRELOAD3_WORDS > 0) begin
+                for (int w = 0; w < PRELOAD3_WORDS; w++) begin
+                    automatic logic [24:0] word_addr = PRELOAD3_BYTE_BASE[26:2] + 25'(w);
+                    mem_store[pack_key(word_addr[24:23], word_addr[22:10], word_addr[9:0])] = preload3_mem[w];
+                end
+                $display("sdram_model: preloaded %0d words from %s at byte base 0x%08h", PRELOAD3_WORDS, PRELOAD3_FILE, PRELOAD3_BYTE_BASE);
             end
         end else begin
             // shift the read-data pipeline every cycle (indices 0..CAS_LATENCY-1)
