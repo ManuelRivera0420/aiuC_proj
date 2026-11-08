@@ -190,6 +190,33 @@ module m5_doom_exec_tb;
     localparam logic [31:0] ADDR_W_READLUMP        = 32'h1003987c; // W_ReadLump entry -- the ONE function every actual lump-content read goes through (w_wad.c), regardless of which specific lump triggers it first: "first required WAD lump content access attempted"
     localparam logic [31:0] ADDR_R_INIT            = 32'h1002c5b4; // R_Init entry -- "game and rendering subsystem initialization" begins (textures/sprites/flats -- real lump content, not just metadata)
     localparam logic [31:0] ADDR_DG_DRAWFRAME      = 32'h1003a608; // DG_DrawFrame entry -- first actual frame-draw call
+    // The attempt-6 run (80,186,517 cycles) reached R_Init and then hit
+    // [RESULT] HALTED (ECALL/_exit) ~51,500 cycles later with W_ReadLump's
+    // milestone never firing -- confirmed by reading w_file_de2115.c that
+    // this port sets wad_file_t.mapped unconditionally, so every lump
+    // CONTENT read is a raw pointer deref into WAD_SDRAM_BASE+position,
+    // never W_ReadLump (a deliberate, correct design for this target, not
+    // a bug -- ADDR_W_READLUMP above will legitimately never fire). Since
+    // only the WAD header+directory are preloaded, every lump's CONTENT
+    // reads as 32'd0 (sdram_model.sv's mem_store is an associative array
+    // that returns 0 for any key that was never written -- confirmed by
+    // reading its .exists()-gated read path directly, not assumed).
+    // Source-level trace of R_Init -> R_InitData -> {R_InitTextures,
+    // R_InitFlats, R_InitSpriteLumps, R_InitColormaps} (r_data.c) shows
+    // none of them obviously fail on all-zero lump content (zeroed counts
+    // just make their per-item loops no-ops), so the exact crash site is
+    // not yet provable by source reading alone -- these fine-grained
+    // sub-milestones plus one at I_Error's own entry (fires on ANY fatal
+    // error call, regardless of message/args, which $display cannot
+    // easily print from RTL) are instrumented now to get ground truth
+    // from an actual run instead of further speculation.
+    localparam logic [31:0] ADDR_R_INITTEXTURES    = 32'h10029844; // R_InitTextures entry (first of R_InitData's four sub-inits)
+    localparam logic [31:0] ADDR_R_INITFLATS       = 32'h10029f9c; // R_InitFlats entry
+    localparam logic [31:0] ADDR_R_INITSPRITELUMPS = 32'h1002a054; // R_InitSpriteLumps entry -- loops over ~853 real sprite lumps, each via W_CacheLumpNum
+    localparam logic [31:0] ADDR_R_INITCOLORMAPS   = 32'h1002a214; // R_InitColormaps entry -- last of R_InitData's four sub-inits
+    localparam logic [31:0] ADDR_R_INITPOINTTOANGLE= 32'h1002be28; // R_InitPointToAngle entry -- fires right after R_InitData returns (R_InitData itself has no milestone; this brackets it)
+    localparam logic [31:0] ADDR_R_INITSKYMAP      = 32'h1002e658; // R_InitSkyMap entry -- fires after R_SetViewSize/R_InitPlanes/R_InitLightTables all returned
+    localparam logic [31:0] ADDR_I_ERROR           = 32'h1000e9ac; // I_Error entry -- fires on ANY fatal DOOM error path, confirming (or ruling out) that the HALTED/_exit seen in attempt 6 is this engine-level fatal path vs. something else
 
     // Explicit initializers -- without them these default to X (unknown)
     // at time 0, and `!X && ...` stays X forever, which SystemVerilog's
@@ -201,6 +228,8 @@ module m5_doom_exec_tb;
     // here in the testbench itself instead.
     logic seen_findiwad = 1'b0, seen_addfile = 1'b0, seen_identify = 1'b0, seen_doomloop = 1'b0;
     logic seen_dginit = 1'b0, seen_initnetgame = 1'b0, seen_readlump = 1'b0, seen_rinit = 1'b0, seen_drawframe = 1'b0;
+    logic seen_rinittextures = 1'b0, seen_rinitflats = 1'b0, seen_rinitspritelumps = 1'b0, seen_rinitcolormaps = 1'b0;
+    logic seen_rinitpointtoangle = 1'b0, seen_rinitskymap = 1'b0, seen_ierror = 1'b0;
 
     always @(posedge clk) begin
         if (rst_n) begin
@@ -241,6 +270,34 @@ module m5_doom_exec_tb;
             if (!seen_drawframe && pc_out == ADDR_DG_DRAWFRAME) begin
                 seen_drawframe <= 1'b1;
                 $display("[MILESTONE] DG_DrawFrame reached -- first frame-draw call, cycle=%0d", cycle_count);
+            end
+            if (!seen_rinittextures && pc_out == ADDR_R_INITTEXTURES) begin
+                seen_rinittextures <= 1'b1;
+                $display("[MILESTONE] R_InitTextures reached, cycle=%0d", cycle_count);
+            end
+            if (!seen_rinitflats && pc_out == ADDR_R_INITFLATS) begin
+                seen_rinitflats <= 1'b1;
+                $display("[MILESTONE] R_InitFlats reached (R_InitTextures returned), cycle=%0d", cycle_count);
+            end
+            if (!seen_rinitspritelumps && pc_out == ADDR_R_INITSPRITELUMPS) begin
+                seen_rinitspritelumps <= 1'b1;
+                $display("[MILESTONE] R_InitSpriteLumps reached (R_InitFlats returned), cycle=%0d", cycle_count);
+            end
+            if (!seen_rinitcolormaps && pc_out == ADDR_R_INITCOLORMAPS) begin
+                seen_rinitcolormaps <= 1'b1;
+                $display("[MILESTONE] R_InitColormaps reached (R_InitSpriteLumps returned -- all ~853 sprite lumps processed), cycle=%0d", cycle_count);
+            end
+            if (!seen_rinitpointtoangle && pc_out == ADDR_R_INITPOINTTOANGLE) begin
+                seen_rinitpointtoangle <= 1'b1;
+                $display("[MILESTONE] R_InitPointToAngle reached -- R_InitData fully returned (R_InitColormaps completed), cycle=%0d", cycle_count);
+            end
+            if (!seen_rinitskymap && pc_out == ADDR_R_INITSKYMAP) begin
+                seen_rinitskymap <= 1'b1;
+                $display("[MILESTONE] R_InitSkyMap reached -- R_SetViewSize/R_InitPlanes/R_InitLightTables all returned, cycle=%0d", cycle_count);
+            end
+            if (!seen_ierror && pc_out == ADDR_I_ERROR) begin
+                seen_ierror <= 1'b1;
+                $display("[MILESTONE] I_Error reached -- a fatal DOOM engine error path was taken, cycle=%0d", cycle_count);
             end
 
             if (mem_valid && mem_ready && (|mem_wstrb) &&
