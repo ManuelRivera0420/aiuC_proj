@@ -148,18 +148,64 @@ module m5_doom_exec_tb;
     longint fb_write_count = 0;
     logic [31:0] first_fb_write_pc = 0;
 
+    // ---- Explicit named milestones (not just periodic PC sampling) ----
+    // Addresses taken directly from `riscv64-unknown-elf-nm
+    // firmware/build/doom/doom.elf` for this exact build -- each one
+    // fires exactly once, the first cycle pc_out equals that function's
+    // real entry address, so a future run's log shows WHICH named phase
+    // it reached even if it stops producing cycle checkpoints
+    // afterward. Zero upstream patches: this only reads pc_out from the
+    // testbench, it does not instrument DOOM's source.
+    localparam logic [31:0] ADDR_D_FINDIWAD_WRAP   = 32'h1003a9e0; // __wrap_D_FindIWAD entry
+    localparam logic [31:0] ADDR_W_ADDFILE         = 32'h100392d4; // W_AddFile entry (header+directory read happens inside)
+    localparam logic [31:0] ADDR_D_IDENTIFYVERSION = 32'h10004118; // D_IdentifyVersion entry (W_AddFile returned OK)
+    localparam logic [31:0] ADDR_D_DOOMLOOP        = 32'h10003d24; // D_DoomLoop entry (D_DoomMain's init fully completed)
+    logic seen_findiwad, seen_addfile, seen_identify, seen_doomloop;
+
     always @(posedge clk) begin
         if (rst_n) begin
             cycle_count <= cycle_count + 1;
 
+            if (!seen_findiwad && pc_out == ADDR_D_FINDIWAD_WRAP) begin
+                seen_findiwad <= 1'b1;
+                $display("[MILESTONE] D_FindIWAD reached, cycle=%0d", cycle_count);
+            end
+            if (!seen_addfile && pc_out == ADDR_W_ADDFILE) begin
+                seen_addfile <= 1'b1;
+                $display("[MILESTONE] W_AddFile reached (D_FindIWAD returned non-NULL), cycle=%0d", cycle_count);
+            end
+            if (!seen_identify && pc_out == ADDR_D_IDENTIFYVERSION) begin
+                seen_identify <= 1'b1;
+                $display("[MILESTONE] D_IdentifyVersion reached (WAD header+directory read without a fatal error), cycle=%0d", cycle_count);
+            end
+            if (!seen_doomloop && pc_out == ADDR_D_DOOMLOOP) begin
+                seen_doomloop <= 1'b1;
+                $display("[MILESTONE] D_DoomLoop reached -- full engine initialization complete, cycle=%0d", cycle_count);
+            end
+
             if (mem_valid && mem_ready && (|mem_wstrb) &&
                 mem_addr >= 32'h3000_0000 && mem_addr <= 32'h3003_FFFF) begin
-                if (fb_write_count == 0) first_fb_write_pc <= pc_out;
+                if (fb_write_count == 0) begin
+                    first_fb_write_pc <= pc_out;
+                    $display("[MILESTONE] First framebuffer write, cycle=%0d, pc=0x%08h", cycle_count, pc_out);
+                end
                 fb_write_count <= fb_write_count + 1;
             end
 
-            if (cycle_count % 2_000_000 == 0) begin
-                $display("[progress] cycle=%0d pc=0x%08h fb_writes=%0d", cycle_count, pc_out, fb_write_count);
+            // 500,000-cycle granularity (4x finer than the original
+            // 2,000,000) -- a prior run stopped producing simulated time
+            // silently somewhere between two 2,000,000-cycle checkpoints
+            // with no error, no $finish, and the only way to detect it
+            // was an out-of-band /proc check (see docs/verification_report.md's
+            // M5 S3 section) -- finer granularity narrows that window
+            // without materially increasing log size (at most ~120 lines
+            // for the full 60,000,000-cycle watchdog). Also reports
+            // cpu_core's own FSM state and mem_valid/mem_ready so a
+            // future stall's LAST known state is more informative than
+            // just a PC.
+            if (cycle_count % 500_000 == 0) begin
+                $display("[progress] cycle=%0d pc=0x%08h fb_writes=%0d cpu_state=%s mem_valid=%0b mem_ready=%0b",
+                          cycle_count, pc_out, fb_write_count, dut_cpu.state.name(), mem_valid, mem_ready);
             end
 
             if (illegal_instr) begin
