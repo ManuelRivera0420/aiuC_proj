@@ -302,9 +302,19 @@ module m5_doom_exec_tb;
                 // the DOOM source passes a literal C string constant, so
                 // this address can be looked up directly in doom.elf's
                 // .rodata to identify exactly which call fired, without
-                // needing any UART/console capture mechanism.
-                $display("[MILESTONE] I_Error reached -- a fatal DOOM engine error path was taken, cycle=%0d, a0(fmt_str_ptr)=0x%08h",
-                          cycle_count, dut_cpu.u_regfile.regs[10]);
+                // needing any UART/console capture mechanism. a1-a7
+                // (x11-x17) are also captured so that if the resolved
+                // format string takes %s/%d arguments (e.g. a lump or
+                // texture NAME), that value is available in the same
+                // run instead of requiring a follow-up one -- a1 for a
+                // %s arg would itself be a pointer, resolved the same
+                // way as a0 if it points into .rodata, or into WAD_SDRAM
+                // content if it points at 0x14xxxxxx.
+                $display("[MILESTONE] I_Error reached -- a fatal DOOM engine error path was taken, cycle=%0d, a0=0x%08h a1=0x%08h a2=0x%08h a3=0x%08h a4=0x%08h a5=0x%08h a6=0x%08h a7=0x%08h",
+                          cycle_count, dut_cpu.u_regfile.regs[10], dut_cpu.u_regfile.regs[11],
+                          dut_cpu.u_regfile.regs[12], dut_cpu.u_regfile.regs[13],
+                          dut_cpu.u_regfile.regs[14], dut_cpu.u_regfile.regs[15],
+                          dut_cpu.u_regfile.regs[16], dut_cpu.u_regfile.regs[17]);
             end
 
             if (mem_valid && mem_ready && (|mem_wstrb) &&
