@@ -1,0 +1,255 @@
+Zenith Simulator v1.0.2
+Copyright (c) 2026 Mifral Tech S.A. de C.V.  All rights reserved.
+
+rtl/memory/sdram_ctrl.sv:127:29: warning: [ZEN-2423] implicit conversion extends from width 12 to width 13
+                dram_addr = {2'b00, col}; // A10=1 (bit10 of col range is 0 here since col<1024<2^10... ensure A10 set for auto-precharge below
+                          ~ ^~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:151:29: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+            if (refresh_ctr >= REFRESH_INTERVAL - 1) begin
+                ~~~~~~~~~~~ ^~ ~~~~~~~~~~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:160:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= POWERUP_CYCLES - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~~~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:199:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_RCD - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~~
+rtl/memory/sdram_ctrl.sv:214:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_CL - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~
+rtl/memory/sdram_ctrl.sv:223:34: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+                    if (wait_ctr >= T_RP - 1) begin
+                        ~~~~~~~~ ^~ ~~~~~~~~
+rtl/memory/sdram_ctrl.sv:242:62: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'int')
+        mem_ready = (state == S_PRECHARGE_WAIT) && (wait_ctr == T_RP - 1);
+                                                    ~~~~~~~~ ^~ ~~~~~~~~
+rtl/peripherals/sd_spi.sv:460:57: warning: [ZEN-2450] arithmetic between operands of different types ('int' and 'logic[1:0]')
+                        block_buf[block_byte_idx[8:2]][8*block_byte_idx[1:0] +: 8] <= xfer_rx_byte;
+                                                       ~^~~~~~~~~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:62:40: warning: [ZEN-2453] comparison of differently signed types ('logic[15:0]' and 'logic signed[15:0]')
+                end else if (pix_waddr < 16'((PIXELS + 3) / 4)) begin
+                             ~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:82:36: warning: [ZEN-2450] arithmetic between operands of different types ('int' and 'logic[1:0]')
+    assign scan_index = scan_word[8*fb_addr[1:0] +: 8];
+                                  ~^~~~~~~~~~~~~
+rtl/peripherals/framebuffer.sv:83:46: warning: [ZEN-2453] comparison of differently signed types ('logic[16:0]' and 'bit signed[16:0]')
+    assign fb_pixel   = (fb_valid && fb_addr < 17'(PIXELS)) ? palette[scan_index][23:0] : 24'd0;
+                                     ~~~~~~~ ^ ~~~~~~~~~~~
+sim/models/sdram_model.sv:106:20: warning: [ZEN-2423] implicit conversion extends from width 25 to width 27
+        pack_key = {b, r, c};
+                 ~ ^~~~~~~~~
+sim/models/sdram_model.sv:141:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD1_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:141:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD1_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/models/sdram_model.sv:148:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD2_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:148:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD2_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/models/sdram_model.sv:155:81: warning: [ZEN-2450] arithmetic between operands of different types ('logic[26:2]' and 'bit signed[24:0]')
+                    automatic logic [24:0] word_addr = PRELOAD3_BYTE_BASE[26:2] + 25'(w);
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+sim/models/sdram_model.sv:155:83: warning: [ZEN-2436] implicit conversion changes signedness from 'bit signed[24:0]' to 'logic[24:0]'
+                    automatic logic [24:0] word_addr = PRELOAD3_BYTE_BASE[26:2] + 25'(w);
+                                                                                ~ ^~~~~~
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_activate' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_mrs' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_precharge' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_read' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_refresh' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'command_count_write' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'saw_read_before_activate_error' has no connection
+    ) u_sdram_model (
+      ^
+sim/tb/m5_doom_exec_tb.sv:140:7: warning: [ZEN-2230] output port 'saw_write_before_activate_error' has no connection
+    ) u_sdram_model (
+      ^
+rtl/bus/soc_bus.sv:186:15: warning: [ZEN-5071] enumeration value 'SEL_NONE' not explicitly handled in case statement
+        case (sel)
+              ^~~
+rtl/memory/sdram_ctrl.sv:107:15: warning: [ZEN-5071] enumeration values 'S_POWERUP', 'S_INIT_WAIT1', 'S_INIT_WAIT2' (and 6 others) not explicitly handled in case statement
+        case (state)
+              ^~~~~
+rtl/peripherals/sd_spi.sv:224:19: warning: [ZEN-5071] enumeration values 'ST_IDLE' and 'ST_DONE_READ' not explicitly handled in case statement
+            case (state)
+                  ^~~~~
+sim/models/sync_mem.sv:39:21: warning: [ZEN-5088] variable 'mem' is driven by an always_ff procedure and also written by another process; LRM 9.2.2 forbids this, Zenith allows it and the last write wins
+                    mem[waddr] <= {
+                    ^~~
+sim/models/sync_mem.sv:21:30: note: also assigned here
+        $readmemh(INIT_FILE, mem);
+                             ^~~
+sim/models/sdram_model.sv:168:19: warning: [ZEN-5071] enumeration value 'CMD_NOP' not explicitly handled in case statement
+            case (cmd)
+                  ^~~
+sdram_model: preloaded 141563 words from sim/models/m5_exec/doom_prog.hex at byte base 0x10000000
+sdram_model: preloaded 3 words from sim/models/m5_exec/wad_header.hex at byte base 0x14000000
+sdram_model: preloaded 12652 words from sim/models/m5_exec/wad_directory.hex at byte base 0x15b69b14
+[progress] cycle=0 pc=0x00000000 fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=500000 pc=0x10000020 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=1000000 pc=0x10000020 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=1
+[progress] cycle=1500000 pc=0x10000020 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=2000000 pc=0x10000020 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=2500000 pc=0x10000020 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=3000000 pc=0x1000001c fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=1
+[progress] cycle=3500000 pc=0x1000001c fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=4000000 pc=0x1000f974 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=4500000 pc=0x10045988 fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=5000000 pc=0x10045a3c fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=5500000 pc=0x1000f958 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=6000000 pc=0x10045978 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=1
+[progress] cycle=6500000 pc=0x10045960 fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=7000000 pc=0x1004595c fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=7500000 pc=0x1000f96c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=8000000 pc=0x1000f95c fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=8500000 pc=0x1000f95c fb_writes=0 cpu_state=S_MEM_REQ mem_valid=0 mem_ready=0
+[progress] cycle=9000000 pc=0x1000f970 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=9500000 pc=0x1004594c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=10000000 pc=0x1000f954 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=10500000 pc=0x1000f954 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=11000000 pc=0x10045a08 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[MILESTONE] D_FindIWAD reached, cycle=11299768
+[MILESTONE] W_AddFile reached (D_FindIWAD returned non-NULL), cycle=11324822
+[progress] cycle=11500000 pc=0x10045750 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=12000000 pc=0x10045620 fb_writes=0 cpu_state=S_MEM_REQ mem_valid=0 mem_ready=0
+[progress] cycle=12500000 pc=0x1004412c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=1
+[progress] cycle=13000000 pc=0x10039590 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=1
+[progress] cycle=13500000 pc=0x1003958c fb_writes=0 cpu_state=S_WRITEBACK mem_valid=0 mem_ready=0
+[progress] cycle=14000000 pc=0x10044128 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=14500000 pc=0x10044150 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=15000000 pc=0x10044114 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=15500000 pc=0x100395fc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=16000000 pc=0x100395b8 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=16500000 pc=0x10044010 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=17000000 pc=0x10043ffc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=17500000 pc=0x10044018 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=18000000 pc=0x10043ffc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=1
+[progress] cycle=18500000 pc=0x100397ac fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=19000000 pc=0x1004400c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=19500000 pc=0x10039794 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=20000000 pc=0x1004403c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=20500000 pc=0x10044034 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[MILESTONE] D_IdentifyVersion reached (WAD header+directory read without a fatal error), cycle=20517472
+[progress] cycle=21000000 pc=0x10044010 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=21500000 pc=0x1004402c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=22000000 pc=0x10044038 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=1
+[progress] cycle=22500000 pc=0x10044030 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=23000000 pc=0x10044020 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=23500000 pc=0x100392c8 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=24000000 pc=0x10039280 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=24500000 pc=0x10039bc0 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=25000000 pc=0x100392a4 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=25500000 pc=0x10039bac fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=26000000 pc=0x100392a8 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=26500000 pc=0x100392b0 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=27000000 pc=0x100392ac fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=27500000 pc=0x100392bc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=28000000 pc=0x100392bc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=28500000 pc=0x10030308 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=29000000 pc=0x1003157c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=29500000 pc=0x100318fc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=30000000 pc=0x100314b8 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=30500000 pc=0x10045908 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=31000000 pc=0x10030b94 fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=31500000 pc=0x10031580 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=32000000 pc=0x10030288 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=32500000 pc=0x100458cc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=1
+[progress] cycle=33000000 pc=0x1002fdf0 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=33500000 pc=0x10031900 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=34000000 pc=0x10031590 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=34500000 pc=0x10030e0c fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=35000000 pc=0x10031670 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=35500000 pc=0x1003107c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=36000000 pc=0x10031544 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=1
+[progress] cycle=36500000 pc=0x10031594 fb_writes=0 cpu_state=S_WRITEBACK mem_valid=0 mem_ready=0
+[progress] cycle=37000000 pc=0x100308f0 fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=37500000 pc=0x1003190c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=38000000 pc=0x10014074 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=38500000 pc=0x10030fe4 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=39000000 pc=0x10031580 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=39500000 pc=0x10044124 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=40000000 pc=0x10030dc8 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=40500000 pc=0x10031558 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=41000000 pc=0x1003096c fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=41500000 pc=0x10031564 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=42000000 pc=0x10030a24 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=42500000 pc=0x10031918 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=43000000 pc=0x100318e8 fb_writes=0 cpu_state=S_FETCH mem_valid=0 mem_ready=0
+[progress] cycle=43500000 pc=0x1002fddc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=44000000 pc=0x10030f94 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=44500000 pc=0x1002ffe4 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=45000000 pc=0x1003158c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=45500000 pc=0x10031538 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=46000000 pc=0x10030120 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=46500000 pc=0x100311cc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=47000000 pc=0x10045900 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=47500000 pc=0x10031594 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=48000000 pc=0x10031590 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=48500000 pc=0x1002fdcc fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=1
+[progress] cycle=49000000 pc=0x1003140c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=49500000 pc=0x10014010 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=50000000 pc=0x10030fa8 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=50500000 pc=0x1003167c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=51000000 pc=0x10030af0 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=51500000 pc=0x10031554 fb_writes=0 cpu_state=S_WAIT_MEM mem_valid=1 mem_ready=0
+[progress] cycle=52000000 pc=0x10031554 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=52500000 pc=0x10030020 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=53000000 pc=0x100310ac fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=53500000 pc=0x10044160 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=54000000 pc=0x1002fdc4 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=54500000 pc=0x10030b8c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=55000000 pc=0x10035eb8 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=55500000 pc=0x100301b0 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=56000000 pc=0x100318e0 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=56500000 pc=0x1003157c fb_writes=0 cpu_state=S_WRITEBACK mem_valid=0 mem_ready=0
+[progress] cycle=57000000 pc=0x1002fe3c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=57500000 pc=0x10030c6c fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=58000000 pc=0x10031590 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[progress] cycle=58500000 pc=0x10044164 fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=59000000 pc=0x1002fde8 fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=1
+[progress] cycle=59500000 pc=0x1003190c fb_writes=0 cpu_state=S_EXEC mem_valid=0 mem_ready=0
+[progress] cycle=60000000 pc=0x1003157c fb_writes=0 cpu_state=S_WAIT_IFETCH mem_valid=1 mem_ready=0
+[RESULT] WATCHDOG (60000000 cycles) reached with no halt/illegal/full-frame -- inconclusive, not a failure. Last pc=0x1003157c, fb_writes_seen=0
+[sim] $finish at time 600000005 (exit code 0)
+Simulation ended at time 600000005
+
+=== Final PC location, identified ===
+pc=0x1003157c -> SHA1_Update (software/upstream/doomgeneric/sha1.c)
+Other late-run PCs (0x10030020/0x10030fa8/0x1002fdc4) -> Transform (sha1.c's
+internal SHA1 block-compression function)
+
+Traced the call path: d_net.c:204 calls W_Checksum(connect_data->wad_sha1sum)
+(part of vanilla DOOM's always-present network-game-info setup, even for
+single player -- this project's own scope decision #9 already noted
+d_net.c is compiled but unused for actual networking). W_Checksum
+(software/upstream/doomgeneric/w_checksum.c) iterates over EVERY entry in
+lumpinfo[] -- all 3,163 real lumps, now that the directory is correctly
+populated -- calling ChecksumAddLump() for each, which feeds the lump's
+NAME, file number, position, and size (all METADATA already present from
+the preloaded directory -- NOT lump content) into a running SHA1 hash via
+SHA1_UpdateString/SHA1_UpdateInt32, each occasionally triggering
+Transform() when SHA1's internal 64-byte block buffer fills.
+
+This is real, correct, bounded (O(3163)) engine code -- not a hang, not
+an unexpected code path -- computing the loaded WAD's identity hash as
+part of DOOM's standard startup sequence. It explains why cycles
+~50,000,000-60,000,000 were spent in a tight rotation through a handful
+of addresses (Transform/SHA1_Update/M_StringCopy): a per-lump loop with
+several hash-update calls each, over thousands of lumps, on a CPU where
+every memory access costs several cycles via the close-page SDRAM
+controller.
